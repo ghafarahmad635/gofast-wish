@@ -11,7 +11,7 @@ const page = async() => {
       headers: await headers() 
   })
   if(!!session){
-      redirect('/')
+      
     }
   return (
     <div>
