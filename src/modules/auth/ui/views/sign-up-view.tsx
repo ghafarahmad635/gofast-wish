@@ -1,14 +1,21 @@
 'use client'
 import { Card, CardContent } from '@/components/ui/card'
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage
+} from '@/components/ui/form'
 import React, { useState } from 'react'
 import { formSchemasignup } from '../../schema'
 import { useForm } from 'react-hook-form'
 import z from 'zod'
-import { zodResolver } from "@hookform/resolvers/zod";
+import { zodResolver } from "@hookform/resolvers/zod"
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { FaGithub, FaGoogle } from "react-icons/fa";
+import { FaGithub, FaGoogle } from "react-icons/fa"
 import Link from 'next/link'
 import { OctagonAlertIcon, Loader2, Eye, EyeOff } from 'lucide-react'
 import { Alert, AlertTitle } from '@/components/ui/alert'
@@ -16,10 +23,11 @@ import { useRouter } from 'next/navigation'
 import { authClient } from '@/lib/auth-client.ts'
 
 const SignUpView = () => {
-  const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const router = useRouter()
+  const [error, setError] = useState<string | null>(null)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [socialLoading, setSocialLoading] = useState<"google" | "github" | null>(null)
 
   const form = useForm<z.infer<typeof formSchemasignup>>({
     resolver: zodResolver(formSchemasignup),
@@ -29,17 +37,20 @@ const SignUpView = () => {
       password: "",
       confirmPassword: "",
     },
-  });
+  })
 
   const {
     handleSubmit,
     control,
     reset,
     formState: { isSubmitting },
-  } = form;
+  } = form
 
+  // ----------------------------
+  // Email/Password Sign Up
+  // ----------------------------
   const onSubmit = async (data: z.infer<typeof formSchemasignup>) => {
-    setError(null);
+    setError(null)
     const { error } = await authClient.signUp.email(
       {
         name: data.name,
@@ -49,20 +60,45 @@ const SignUpView = () => {
       },
       {
         onSuccess: () => {
-          setError(null);
-          router.push("/");
+          setError(null)
+          router.push("/")
         },
         onError: ({ error }) => {
-          setError(error.message);
+          setError(error.message)
         },
       }
-    );
-    if (error?.message) setError(error.message);
-  };
+    )
+    if (error?.message) setError(error.message)
+  }
 
-  const onSocial = (provider: "github" | "google") => {
-    // Social login logic will go here later
-  };
+  // ----------------------------
+  // Social Logins (Google/GitHub)
+  // ----------------------------
+  const onSocial = async (provider: "github" | "google") => {
+    setError(null)
+    setSocialLoading(provider)
+    try {
+      await authClient.signIn.social(
+        {
+          provider,
+          callbackURL: "/",
+        },
+        {
+          onSuccess: () => {
+            setError(null)
+            router.push("/")
+          },
+          onError: ({ error }) => {
+            setError(error.message)
+          },
+        }
+      )
+    } catch {
+      setError("Social login failed. Please try again.")
+    } finally {
+      setSocialLoading(null)
+    }
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -71,10 +107,9 @@ const SignUpView = () => {
           <Form {...form}>
             <form onSubmit={handleSubmit(onSubmit)} className="p-6 md:p-8">
               <div className="flex flex-col gap-6">
+                {/* Header */}
                 <div className="flex flex-col items-center text-center">
-                  <h1 className="text-2xl font-bold">
-                    Let&apos;s get started
-                  </h1>
+                  <h1 className="text-2xl font-bold">Let&apos;s get started</h1>
                   <p className="text-muted-foreground text-balance">
                     Create your account
                   </p>
@@ -180,7 +215,7 @@ const SignUpView = () => {
                   )}
                 />
 
-                {/* Submit + Reset Buttons */}
+                {/* Submit + Reset */}
                 <div className="flex gap-3">
                   <Button
                     disabled={isSubmitting}
@@ -200,8 +235,8 @@ const SignUpView = () => {
                   <Button
                     type="button"
                     onClick={() => {
-                      reset();
-                      setError(null);
+                      reset()
+                      setError(null)
                     }}
                     variant="outline"
                     className="w-auto shrink-0"
@@ -225,25 +260,34 @@ const SignUpView = () => {
                   </span>
                 </div>
 
-                {/* Social Login */}
+                {/* Social Buttons */}
                 <div className="grid grid-cols-2 gap-4">
                   <Button
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || !!socialLoading}
                     onClick={() => onSocial('google')}
                     variant="outline"
                     type="button"
-                    className="w-full hover:text-white"
+                    className="w-full flex justify-center hover:text-white"
                   >
-                    <FaGoogle />
+                    {socialLoading === 'google' ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <FaGoogle />
+                    )}
                   </Button>
+
                   <Button
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || !!socialLoading}
                     onClick={() => onSocial('github')}
                     variant="outline"
                     type="button"
-                    className="w-full hover:text-white"
+                    className="w-full flex justify-center hover:text-white"
                   >
-                    <FaGithub />
+                    {socialLoading === 'github' ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <FaGithub />
+                    )}
                   </Button>
                 </div>
 
@@ -271,8 +315,11 @@ const SignUpView = () => {
         </CardContent>
       </Card>
 
+      {/* Footer */}
       <div className="text-muted-foreground *:[a]:hover:text-primary text-center text-xs text-balance *:[a]:underline *:[a]:underline-offset-4">
-        By clicking continue, you agree to our <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>
+        By clicking continue, you agree to our{" "}
+        <a href="#">Terms of Service</a> and{" "}
+        <a href="#">Privacy Policy</a>.
       </div>
     </div>
   )
