@@ -3,9 +3,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth-client.ts";
 import { useState } from "react";
+import { date } from "zod";
 
 
 export default function Home() {
+   const { 
+        data: session, 
+        isPending, //loading state
+        error, //error object
+        refetch //refetch the session
+    } = authClient.useSession() 
+console.log(date)
   const [name, setName] = useState("");
    const [email, setEmail] = useState("");
    const [password, setPassword] = useState("");
@@ -26,7 +34,10 @@ const onSubmit=()=>{
      }
   })
 }
-
+console.log("sesstion ",session)
+if(session){
+ 
+}
   return (
     <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
       <div>
