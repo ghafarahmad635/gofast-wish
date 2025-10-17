@@ -13,6 +13,8 @@ if(session){
   <div>
      <h1>Welcome {session.user.name}</h1>
      <p>{session.user.id}</p>
+     <p>{session.user.loginStatus}</p>
+     <p>{session.user.role}</p>
   </div>
  
  

@@ -17,7 +17,7 @@ const DashboardUserButton = () => {
     return null;
   }
    const onLogout = () => {
-    authClient.signOut({
+    const isPending=authClient.signOut({
       fetchOptions: {
         onSuccess: () => {
           router.push("/sign-in");
@@ -117,6 +117,7 @@ const DashboardUserButton = () => {
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={onLogout}
+          disabled={isPending}
           className="cursor-pointer flex items-center justify-between"
         >
           Logout
