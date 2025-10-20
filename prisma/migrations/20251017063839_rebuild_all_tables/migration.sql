@@ -10,10 +10,10 @@ CREATE TABLE "user" (
     "image" TEXT,
     "role" "Role" NOT NULL DEFAULT 'USER',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "loginStatus" BOOLEAN DEFAULT false,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "loginStatus" BOOLEAN DEFAULT true,
     "country" TEXT,
-    "timezone" TEXT,
+    "timezone" TEXT DEFAULT 'UTC',
 
     CONSTRAINT "user_pkey" PRIMARY KEY ("id")
 );
@@ -58,9 +58,25 @@ CREATE TABLE "verification" (
     "value" TEXT NOT NULL,
     "expiresAt" TIMESTAMP(3) NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "verification_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "goals" (
+    "id" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
+    "category" TEXT,
+    "description" TEXT,
+    "targetDate" TIMESTAMP(3),
+    "isCompleted" BOOLEAN NOT NULL DEFAULT false,
+    "priority" INTEGER,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "userId" TEXT NOT NULL,
+
+    CONSTRAINT "goals_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -74,3 +90,6 @@ ALTER TABLE "session" ADD CONSTRAINT "session_userId_fkey" FOREIGN KEY ("userId"
 
 -- AddForeignKey
 ALTER TABLE "account" ADD CONSTRAINT "account_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "goals" ADD CONSTRAINT "goals_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;

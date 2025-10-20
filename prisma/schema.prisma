@@ -13,12 +13,15 @@ enum Role {
 }
 
 model User {
-  id            String    @id
+  id            String    @id @default(uuid())
   name          String
   email         String    @unique
   emailVerified Boolean   @default(false)
   image         String?
   role          Role      @default(USER)
+  banned        Boolean?  @default(false)         // ✅ new
+  banReason     String?                          // ✅ new
+  banExpires    DateTime?                        // ✅ new
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   sessions      Session[]
@@ -27,20 +30,22 @@ model User {
   loginStatus   Boolean?  @default(true)
   country       String?
   timezone      String?   @default("UTC")
+  goals         Goal[]  
 
   @@map("user")
 }
 
 model Session {
-  id        String   @id
-  expiresAt DateTime
-  token     String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  ipAddress String?
-  userAgent String?
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id              String   @id @default(uuid())
+  expiresAt       DateTime
+  token           String   @unique
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  ipAddress       String?
+  userAgent       String?
+  userId          String
+  impersonatedBy  String?                      // ✅ new
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("session")
 }
@@ -73,4 +78,20 @@ model Verification {
   updatedAt  DateTime @updatedAt
 
   @@map("verification")
+}
+
+model Goal {
+  id          String   @id @default(cuid())
+  title       String
+  category    String?
+  description String?
+  targetDate  DateTime?
+  isCompleted Boolean   @default(false)
+  priority    Int?      // Example: 1 = High, 2 = Medium, 3 = Low
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("goals")
 }
