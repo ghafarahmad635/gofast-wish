@@ -8,6 +8,7 @@ import { authClient } from '@/lib/auth-client.ts';
 import { ChevronDownIcon, CreditCardIcon, LogOutIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import React from 'react'
+import { toast } from 'sonner';
 
 const DashboardUserButton = () => {
      const { data, isPending } = authClient.useSession();
@@ -24,6 +25,19 @@ const DashboardUserButton = () => {
         }
       }
     })
+  }
+  const handleBillingPortal=async()=>{
+    try {
+      const { data, error } = await authClient.subscription.billingPortal({
+              returnUrl: process.env.NEXT_PUBLIC_APP_URL, // redirect after managing billing
+            });
+            if(data?.url){
+              window.location.href = data.url; // Redirect to Stripe Billing Portal
+            }
+            
+    }catch (err){
+       toast.error("Failed to open billing portal:");
+    }
   }
   if (isMobile) {
     return(
@@ -109,7 +123,7 @@ const DashboardUserButton = () => {
         </DropdownMenuLabel>
          <DropdownMenuSeparator />
          <DropdownMenuItem
-         
+          onClick={handleBillingPortal}
           className="cursor-pointer flex items-center justify-between"
         >
           Billing

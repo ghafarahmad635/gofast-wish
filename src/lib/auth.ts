@@ -55,7 +55,42 @@ export const auth = betterAuth({
 
       onEvent: async (event) => {
         console.log(`⚡ Stripe event: ${event.type}`);
+
+        if (event.type === "invoice.paid") {
+          const invoice = event.data.object as Stripe.Invoice;
+
+          try {
+            const customerId = invoice.customer as string;
+            const user = await db.user.findFirst({
+              where: { stripeCustomerId: customerId },
+            });
+
+            if (!user) {
+              console.warn("⚠️ No matching user for this invoice.");
+              return;
+            }
+
+            await db.order.create({
+              data: {
+                userId: user.id,
+                stripeInvoiceId: invoice.id,
+                stripeSubscriptionId:
+                  typeof (invoice as any).subscription === "string"
+                    ? (invoice as any).subscription
+                    : null,
+                amount: (invoice.amount_paid ?? 0) / 100,
+                currency: invoice.currency || "usd",
+                status: invoice.status ?? "paid",
+              },
+            });
+
+            console.log(`💰 Order created for user ${user.email}`);
+          } catch (err) {
+            console.error("❌ Failed to record order:", err);
+          }
+        }
       },
+
 
       // ✅ move the subscription config INSIDE the stripe plugin
       subscription: {
@@ -66,12 +101,12 @@ export const auth = betterAuth({
           {
             name: "basic",
             priceId: "price_1SKYqAD8qR70pjFErK5C207r", // replace with real Stripe price IDs
-            limits: { projects: 5, storage: 10 },
+            limits: { projects: 5, storage: 10, createGoal: 5 },
           },
           {
             name: "pro",
             priceId: "price_1SKYsZD8qR70pjFEYXwZOCm0",
-            limits: { projects: 50, storage: 100 },
+            limits: { projects: 50, storage: 100, createGoal: 50 },
             freeTrial: { days: 7 },
           },
         ],
@@ -84,6 +119,7 @@ export const auth = betterAuth({
           console.log(`⚠️ Subscription ${subscription.id} canceled`);
         },
       },
+      
     }),
   ],
 });

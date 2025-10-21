@@ -35,6 +35,7 @@ model User {
   media       Media[] // ✅ Added reverse relation
 
   stripeCustomerId String?
+   orders        Order[] 
 
   @@map("user")
 }
@@ -100,6 +101,19 @@ model Subscription {
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
 }
+
+model Order {
+  id            String   @id @default(cuid())
+  userId        String
+  stripeInvoiceId String?
+  stripeSubscriptionId String?
+  amount        Float
+  currency      String   @default("usd")
+  status        String
+  createdAt     DateTime @default(now())
+  user          User     @relation(fields: [userId], references: [id])
+}
+
 
 
 model Goal {
