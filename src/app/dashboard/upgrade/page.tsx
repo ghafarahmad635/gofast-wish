@@ -17,7 +17,7 @@ export default function TestStripe() {
   const handleBillingPortal = async () => {
     try {
       const { data, error } = await authClient.subscription.billingPortal({
-        returnUrl: "http://localhost:3000/dashboard", // redirect after managing billing
+        returnUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard`, // redirect after managing billing
       });
 
       if (error) {
