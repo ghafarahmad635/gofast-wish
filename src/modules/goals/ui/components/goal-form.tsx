@@ -1,10 +1,9 @@
-'use client'
+"use client";
 
 import { Button } from "@/components/ui/button";
 import { useTRPC } from "@/trpc/client";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { GoalInsertSchema, goalInsertSchema } from "../../schmas";
@@ -14,78 +13,144 @@ import {
   FormField,
   FormItem,
   FormLabel,
-  FormMessage
+  FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-
 import DatePickerField from "./date-picker-field";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { categories } from "../../constants";
+import FeaturedImageUpload from "./FeaturedImageUpload";
+import { uploadFiles } from "@/lib/utils/uploadthingClient";
+import { useState } from "react";
+import { GoalGetOne } from "../../types";
 
 interface GoalFormProps {
   onSuccess?: () => void;
   onCancel?: () => void;
+  initialValues?: GoalGetOne;
 }
 
-const GoalForm = ({ onSuccess, onCancel }: GoalFormProps) => {
+const GoalForm = ({ onSuccess, onCancel, initialValues }: GoalFormProps) => {
   const trpc = useTRPC();
-  const router = useRouter();
+  const [isUploading, setIsUploading] = useState(false);
+  const isEdit = !!initialValues?.id;
+  const queryClient = useQueryClient();
+
   const form = useForm<GoalInsertSchema>({
     resolver: zodResolver(goalInsertSchema),
     defaultValues: {
-      title: "",
-      description: "",
-      category: "",
-      targetDate: undefined,
-      priority: undefined,
+      title: initialValues?.title ?? "",
+      description: initialValues?.description ?? "",
+      category: initialValues?.category ?? "",
+      targetDate: initialValues?.targetDate
+        ? new Date(initialValues.targetDate).toISOString()
+        : undefined,
+      priority: initialValues?.priority
+        ? String(initialValues.priority) as "1" | "2" | "3"
+        : undefined,
+      featuredImageId: initialValues?.featuredImageId ?? undefined,
     },
   });
 
   const createGoal = useMutation(
     trpc.goals.create.mutationOptions({
       onSuccess: async () => {
+        await queryClient.invalidateQueries(trpc.goals.getMany.queryOptions({}));
         toast.success("Goal created successfully!");
         onSuccess?.();
         form.reset();
-        router.refresh(); 
-       
       },
-      onError: (error) => {
-        toast.error(error.message);
-        if (error.data?.code === "FORBIDDEN") {
-          router.push("/upgrade");
-        }
-      },
+      onError: (error) => toast.error(error.message),
     })
   );
 
-  
-  const isPending = createGoal.isPending;
+  const updateGoal = useMutation(
+    trpc.goals.update.mutationOptions({
+      onSuccess: async () => {
+        toast.success("Goal updated successfully!");
+        await queryClient.invalidateQueries(trpc.goals.getMany.queryOptions({}));
+        onSuccess?.();
+        form.reset();
+      },
+      onError: (error) => toast.error(error.message),
+    })
+  );
+
+  const isPending = createGoal.isPending || updateGoal.isPending;
+  const isSubmitting = isPending || isUploading;
 
   const onSubmit = async (values: GoalInsertSchema) => {
-    try {
-      // ✅ Ensure `targetDate` is a Date (not string)
+  try {
+    setIsUploading(true);
+    let featuredImageId = initialValues?.featuredImageId ?? undefined;
 
-      createGoal.mutate(values);
-     
-    } catch (error: any) {
-      toast.error(error.message || "Failed to create goal");
+    // Case 1: user picked a new file → upload & replace old
+    if (values.file && values.file instanceof File) {
+      const uploadRes = await uploadFiles("goalImageUploader", { files: [values.file] });
+      const uploaded = uploadRes?.[0];
+      if (uploaded?.serverData?.mediaId) {
+        featuredImageId = uploaded.serverData.mediaId;
+      } else {
+        toast.error("Image upload failed");
+        setIsUploading(false);
+        return;
+      }
     }
-  };
+
+    // Case 2: user removed image and didn’t upload a new one → delete old
+    else if (!values.file && !form.getValues("featuredImageId") && initialValues?.featuredImageId) {
+      featuredImageId = undefined; // triggers backend delete
+    }
+
+    setIsUploading(false);
+    console.log("Featured Image ID:", featuredImageId);
+
+    const payload = {
+      title: values.title,
+      description: values.description,
+      category: values.category,
+      targetDate: values.targetDate,
+      priority: values.priority,
+      featuredImageId, // may be undefined or new ID
+    };
+
+    if (isEdit && initialValues?.id) {
+      updateGoal.mutate({ ...payload, id: initialValues.id });
+    } else {
+      createGoal.mutate(payload);
+    }
+  } catch (error: any) {
+    console.error("❌ Failed to submit goal:", error);
+    toast.error(error.message || "Something went wrong while saving your goal");
+  } finally {
+    setIsUploading(false);
+  }
+};
+
 
   return (
     <Form {...form}>
       <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
+        <FeaturedImageUpload
+          form={form}
+          name="file"
+          initialImage={initialValues?.featuredImage?.url ?? null}
+        />
+
         <FormField
           name="title"
           control={form.control}
           render={({ field }) => (
             <FormItem>
               <FormLabel>Title</FormLabel>
-              <FormControl>
-                <Input {...field} placeholder="e.g. Learn React" />
-              </FormControl>
+              <FormControl><Input {...field} placeholder="e.g. Learn React" /></FormControl>
               <FormMessage />
             </FormItem>
           )}
@@ -97,9 +162,7 @@ const GoalForm = ({ onSuccess, onCancel }: GoalFormProps) => {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Description</FormLabel>
-              <FormControl>
-                <Textarea {...field} placeholder="Short summary of your goal..." />
-              </FormControl>
+              <FormControl><Textarea  className="bg-white"{...field} placeholder="Short summary..." /></FormControl>
               <FormMessage />
             </FormItem>
           )}
@@ -111,19 +174,16 @@ const GoalForm = ({ onSuccess, onCancel }: GoalFormProps) => {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Category</FormLabel>
-              <Select
-                onValueChange={field.onChange}
-                value={field.value}
-              >
-                <SelectTrigger className="w-full">
+              <Select onValueChange={field.onChange} value={field.value}>
+                <SelectTrigger className="bg-white w-full">
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map((cat) => (
-                  <SelectItem key={cat.value} value={cat.value}>
-                    {cat.label}
-                  </SelectItem>
-                ))}
+                    <SelectItem key={cat.value} value={cat.value}>
+                      {cat.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -142,17 +202,15 @@ const GoalForm = ({ onSuccess, onCancel }: GoalFormProps) => {
             </FormItem>
           )}
         />
+
         <FormField
           control={form.control}
           name="priority"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Priority</FormLabel>
-              <Select
-                onValueChange={field.onChange}
-                value={field.value}
-              >
-                <SelectTrigger className="w-full">
+              <Select onValueChange={field.onChange} value={field.value}>
+                <SelectTrigger className="bg-white w-full">
                   <SelectValue placeholder="Select priority" />
                 </SelectTrigger>
                 <SelectContent>
@@ -166,22 +224,13 @@ const GoalForm = ({ onSuccess, onCancel }: GoalFormProps) => {
           )}
         />
 
-
+        {isUploading && <p className="text-sm text-gray-500 italic">Uploading image...</p>}
 
         <div className="flex gap-3 justify-end">
-          <Button
-            type="submit"
-            disabled={isPending}
-            className="flex items-center gap-2"
-          >
-            {isPending ? "Saving..." : "Save Goal"}
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? (isEdit ? "Updating..." : "Saving...") : isEdit ? "Update Goal" : "Save Goal"}
           </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={onCancel}
-            disabled={isPending}
-          >
+          <Button type="button" variant="secondary" onClick={onCancel} disabled={isSubmitting}>
             Cancel
           </Button>
         </div>

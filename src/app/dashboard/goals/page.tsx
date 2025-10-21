@@ -7,8 +7,15 @@ import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import React, { Suspense } from 'react'
 import { GoalsListHeader } from '@/modules/goals/ui/components/goals-list-header';
+import type { SearchParams } from 'nuqs/server';
+import { loadSearchParams } from '@/modules/goals/params';
 
-const Goals = async() => {
+
+interface Props {
+  searchParams: Promise<SearchParams>;
+};
+const Goals = async({ searchParams }: Props) => {
+  const filter = await loadSearchParams(searchParams);
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -16,7 +23,11 @@ const Goals = async() => {
     redirect("/sign-in");
   }
   const queryClient=getQueryClient();
-  void queryClient.prefetchQuery(trpc.goals.getMany.queryOptions())
+  void queryClient.prefetchQuery(trpc.goals.getMany.queryOptions({
+    search:filter.search,
+    page:filter.page,
+    
+  }))
   return (
     <>
     <GoalsListHeader />

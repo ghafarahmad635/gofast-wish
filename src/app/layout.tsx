@@ -3,7 +3,10 @@ import { Geist, Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
 import { TRPCReactProvider } from "@/trpc/client";
 import { Toaster } from "@/components/ui/sonner";
-
+import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
+import { ourFileRouter } from "./api/uploadthing/core";
+import { extractRouterConfig } from "uploadthing/server";
+import { NuqsAdapter } from 'nuqs/adapters/next/app'
 const inter = Inter({
   subsets: ["latin"],
 });
@@ -24,8 +27,12 @@ export default function RootLayout({
           <body
             className={`${inter.className} antialiased`}
           >
-            <Toaster />
-            {children}
+            <NuqsAdapter>
+              <NextSSRPlugin routerConfig={extractRouterConfig(ourFileRouter)} />
+              <Toaster />
+              {children}
+            </NuqsAdapter>
+             
           </body>
         </html>
       </TRPCReactProvider>

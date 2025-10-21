@@ -19,33 +19,34 @@ model User {
   emailVerified Boolean   @default(false)
   image         String?
   role          Role      @default(USER)
-  banned        Boolean?  @default(false)         // ✅ new
-  banReason     String?                          // ✅ new
-  banExpires    DateTime?                        // ✅ new
+  banned        Boolean?  @default(false) // ✅ new
+  banReason     String? // ✅ new
+  banExpires    DateTime? // ✅ new
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   sessions      Session[]
   accounts      Account[]
 
-  loginStatus   Boolean?  @default(true)
-  country       String?
-  timezone      String?   @default("UTC")
-  goals         Goal[]  
+  loginStatus Boolean? @default(true)
+  country     String?
+  timezone    String?  @default("UTC")
+  goals       Goal[]
+  media       Media[] // ✅ Added reverse relation
 
   @@map("user")
 }
 
 model Session {
-  id              String   @id @default(uuid())
-  expiresAt       DateTime
-  token           String   @unique
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  ipAddress       String?
-  userAgent       String?
-  userId          String
-  impersonatedBy  String?                      // ✅ new
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id             String   @id @default(uuid())
+  expiresAt      DateTime
+  token          String   @unique
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  ipAddress      String?
+  userAgent      String?
+  userId         String
+  impersonatedBy String? // ✅ new
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("session")
 }
@@ -81,17 +82,35 @@ model Verification {
 }
 
 model Goal {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   title       String
   category    String?
   description String?
   targetDate  DateTime?
   isCompleted Boolean   @default(false)
-  priority    Int?      // Example: 1 = High, 2 = Medium, 3 = Low
+  priority    Int?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   userId      String
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  featuredImageId String?
+  featuredImage   Media?  @relation("GoalFeaturedImage", fields: [featuredImageId], references: [id], onDelete: SetNull)
+
   @@map("goals")
 }
+
+model Media {
+  id         String   @id @default(cuid())
+  url        String
+  fileName   String
+  fileType   String
+  fileSize   Int
+  mimeType   String
+  extension  String?
+  uploadedAt DateTime @default(now())
+  uploadedBy String?
+  user       User?    @relation(fields: [uploadedBy], references: [id])
+  goals      Goal[]   @relation("GoalFeaturedImage") // reverse relation
+}
+
