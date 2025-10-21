@@ -57,38 +57,47 @@ export const auth = betterAuth({
         console.log(`⚡ Stripe event: ${event.type}`);
 
         if (event.type === "invoice.paid") {
-          const invoice = event.data.object as Stripe.Invoice;
+    const invoice = event.data.object as Stripe.Invoice;
 
-          try {
-            const customerId = invoice.customer as string;
-            const user = await db.user.findFirst({
-              where: { stripeCustomerId: customerId },
-            });
+        try {
+          const customerId = invoice.customer as string;
 
-            if (!user) {
-              console.warn("⚠️ No matching user for this invoice.");
-              return;
-            }
+          const user = await db.user.findFirst({
+            where: { stripeCustomerId: customerId },
+          });
 
-            await db.order.create({
-              data: {
-                userId: user.id,
-                stripeInvoiceId: invoice.id,
-                stripeSubscriptionId:
-                  typeof (invoice as any).subscription === "string"
-                    ? (invoice as any).subscription
-                    : null,
-                amount: (invoice.amount_paid ?? 0) / 100,
-                currency: invoice.currency || "usd",
-                status: invoice.status ?? "paid",
-              },
-            });
-
-            console.log(`💰 Order created for user ${user.email}`);
-          } catch (err) {
-            console.error("❌ Failed to record order:", err);
+          if (!user) {
+            console.warn("⚠️ No matching user found for invoice.");
+            return;
           }
+
+          // Safely get subscription ID
+          const subscriptionId =
+            typeof (invoice as any).subscription === "string"
+              ? (invoice as any).subscription
+              : null;
+
+          await db.order.create({
+            data: {
+              userId: user.id,
+              stripeInvoiceId: invoice.id,
+              stripeSubscriptionId: subscriptionId,
+              stripeCustomerId: customerId,
+              amount: (invoice.amount_paid ?? 0) / 100,
+              currency: invoice.currency || "usd",
+              status: invoice.status ?? "paid",
+              hostedInvoiceUrl: invoice.hosted_invoice_url || null,
+              invoicePdfUrl: invoice.invoice_pdf || null,
+              customerEmail: invoice.customer_email || user.email,
+              customerName: invoice.customer_name || user.name,
+            },
+          });
+
+          console.log(`💰 Order saved: ${invoice.id} for ${user.email}`);
+        } catch (err) {
+          console.error("❌ Failed to record order:", err);
         }
+      }
       },
 
 

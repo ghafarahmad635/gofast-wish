@@ -103,15 +103,21 @@ model Subscription {
 }
 
 model Order {
-  id            String   @id @default(cuid())
-  userId        String
-  stripeInvoiceId String?
-  stripeSubscriptionId String?
-  amount        Float
-  currency      String   @default("usd")
-  status        String
-  createdAt     DateTime @default(now())
-  user          User     @relation(fields: [userId], references: [id])
+  id                    String   @id @default(cuid())
+  userId                String
+  stripeInvoiceId       String?
+  stripeSubscriptionId  String?
+  stripeCustomerId      String?
+  amount                Float
+  currency              String   @default("usd")
+  status                String
+  hostedInvoiceUrl      String?
+  invoicePdfUrl         String?
+  customerEmail         String?
+  customerName          String?
+  createdAt             DateTime @default(now())
+
+  user                  User     @relation(fields: [userId], references: [id])
 }
 
 
