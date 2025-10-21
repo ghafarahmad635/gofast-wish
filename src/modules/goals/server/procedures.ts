@@ -192,5 +192,64 @@ export const goalsRouter = createTRPCRouter({
     }
   }),
 
+  remove: protectedProcedure
+  .input(z.object({ id: z.string() }))
+  .mutation(async ({ ctx, input }) => {
+    console.log("🗑️ Attempting to delete goal with ID:", input.id);
+
+    try {
+      // Step 1: Fetch goal with media
+      const goal = await db.goal.findFirst({
+        where: { id: input.id, userId: ctx.auth.user.id },
+        include: { featuredImage: true },
+      });
+
+      if (!goal) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Goal not found or unauthorized.",
+        });
+      }
+
+      // Step 2: If goal has an image, delete from storage and DB
+      if (goal.featuredImage) {
+        const oldUrl = goal.featuredImage.url;
+        const key = oldUrl?.split("/f/")[1];
+
+        if (key) {
+          try {
+            await utapi.deleteFiles(key);
+            console.log("✅ Deleted file from UploadThing:", key);
+          } catch (err) {
+            console.warn("⚠️ Failed to delete file from UploadThing:", err);
+          }
+        }
+
+        try {
+          await db.media.delete({ where: { id: goal.featuredImage.id } });
+          console.log("✅ Deleted media record:", goal.featuredImage.id);
+        } catch (err) {
+          console.warn("⚠️ Failed to delete media record:", err);
+        }
+      }
+
+      // Step 3: Delete the goal itself
+      await db.goal.delete({
+        where: { id: goal.id },
+      });
+
+      console.log("✅ Goal deleted successfully:", goal.id);
+
+      return { success: true, message: "Goal deleted successfully" };
+    } catch (error) {
+      console.error("❌ Failed to delete goal:", error);
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Failed to delete goal. Please try again later.",
+      });
+    }
+  }),
+
+
 
 });

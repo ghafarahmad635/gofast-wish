@@ -4,7 +4,7 @@ import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
 import { LoadingState } from "@/components/loading-state";
 import { useTRPC } from "@/trpc/client";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import Image from "next/image";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,10 +15,15 @@ import { useGoalsFilters } from "../../hooks/use-goals-filters";
 import { ResponsiveDialog } from "@/components/responsive-dialog";
 import GoalForm from "../components/goal-form";
 import { useEffect } from "react";
+import { useConfirm } from "@/hooks/use-confirm";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 const GoalsViews = () => {
   const trpc = useTRPC();
+  const queryClient = useQueryClient();
   const [filters, setFilters] = useGoalsFilters();
+  const router = useRouter();
   const { data } = useSuspenseQuery(trpc.goals.getMany.queryOptions({
     search:filters.search,
     page:filters.page,
@@ -37,6 +42,36 @@ const GoalsViews = () => {
 
  // ✅ Helper function for closing dialog
   const closeDialog = () => setFilters({ edit: "" });
+  const removeGoal = useMutation(
+    trpc.goals.remove.mutationOptions({
+      onSuccess: async() => {
+        // Invalidate and refetch goals list after deletion
+        await queryClient.invalidateQueries();
+       
+        router.push("/dashboard/goals");
+      },
+      onError: (error) => {
+        toast.error(error.message);
+      }
+    })
+  )
+  const [ConfirmDialog, confirmDelete] = useConfirm(
+    "Delete Goal",
+    "Are you sure you want to delete this goal? This action cannot be undone."
+  );
+  const handleRemoveGoal=async(goalId:string)=>{
+   await confirmDelete(async () => {
+     
+      toast.promise(removeGoal.mutateAsync({ id: goalId }), {
+      loading: "Deleting goal...",
+      success: "Goal deleted successfully",
+      error: "Failed to delete goal",
+    });
+   })
+  }
+
+  
+
 
   if (!data || data.items.length === 0) {
     return (
@@ -104,6 +139,7 @@ const GoalsViews = () => {
                     size="icon"
                     variant="ghost"
                     className="h-8 w-8 text-gray-600 hover:text-red-600"
+                    onClick={()=>handleRemoveGoal(goal.id)}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -195,6 +231,7 @@ const GoalsViews = () => {
        onCancel={closeDialog}
       initialValues={goalDetails} />
     </ResponsiveDialog>
+      <ConfirmDialog />
 
     </>
 
