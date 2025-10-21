@@ -1,3 +1,4 @@
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -32,6 +33,8 @@ model User {
   timezone    String?  @default("UTC")
   goals       Goal[]
   media       Media[] // ✅ Added reverse relation
+
+  stripeCustomerId String?
 
   @@map("user")
 }
@@ -81,6 +84,24 @@ model Verification {
   @@map("verification")
 }
 
+model Subscription {
+  id                   String   @id @default(cuid())
+  plan                 String
+  referenceId          String
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  status               String
+  periodStart          DateTime?
+  periodEnd            DateTime?
+  cancelAtPeriodEnd    Boolean?
+  seats                Int?
+  trialStart           DateTime?
+  trialEnd             DateTime?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+
 model Goal {
   id          String    @id @default(cuid())
   title       String
@@ -113,4 +134,5 @@ model Media {
   user       User?    @relation(fields: [uploadedBy], references: [id])
   goals      Goal[]   @relation("GoalFeaturedImage") // reverse relation
 }
+
 
