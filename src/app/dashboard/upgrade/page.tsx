@@ -7,8 +7,8 @@ export default function TestStripe() {
   const handleUpgrade = async () => {
     const { error } = await authClient.subscription.upgrade({
       plan: "pro", // must match your plan name in auth.ts
-      successUrl: "http://localhost:3000/dashboard",
-      cancelUrl: "http://localhost:3000/pricing",
+      successUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard`,
+      cancelUrl: `${process.env.NEXT_PUBLIC_APP_URL}/`,
     });
 
     if (error) alert(error.message);
