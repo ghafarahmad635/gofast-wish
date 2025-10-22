@@ -249,6 +249,57 @@ export const goalsRouter = createTRPCRouter({
       });
     }
   }),
+  getManyByStatus: protectedProcedure
+  .input(
+    z.object({
+      page: z.number().default(DEFAULT_PAGE),
+      pageSize: z
+        .number()
+        .min(MIN_PAGE_SIZE)
+        .max(MAX_PAGE_SIZE)
+        .default(3),
+      status: z.enum(["completed", "incomplete"]).default("incomplete"),
+    })
+  )
+  .query(async ({ ctx, input }) => {
+    const { page, pageSize, status } = input;
+
+    // ✅ Shared filter logic
+    const where: Prisma.GoalWhereInput = {
+      userId: ctx.auth.user.id,
+      isCompleted: status === "completed",
+    };
+
+    // ✅ Total count and pagination setup
+    const total = await db.goal.count({ where });
+    const totalPages = Math.ceil(total / pageSize);
+
+    // ✅ Query goals with pagination
+    const data = await db.goal.findMany({
+      where,
+      include: {
+        featuredImage: {
+          select: { url: true },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    });
+
+    // ✅ Return unified format
+    return {
+      items: data,
+      total,
+      totalPages,
+      currentPage: page,
+      pageSize,
+      status,
+    };
+  }),
+
 
 
 

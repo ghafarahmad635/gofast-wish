@@ -63,6 +63,7 @@ const GoalForm = ({ onSuccess, onCancel, initialValues }: GoalFormProps) => {
     trpc.goals.create.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries(trpc.goals.getMany.queryOptions({}));
+        await queryClient.invalidateQueries(trpc.goals.getManyByStatus.queryOptions({}));
         toast.success("Goal created successfully!");
         onSuccess?.();
         form.reset();
@@ -76,6 +77,7 @@ const GoalForm = ({ onSuccess, onCancel, initialValues }: GoalFormProps) => {
       onSuccess: async () => {
         toast.success("Goal updated successfully!");
         await queryClient.invalidateQueries(trpc.goals.getMany.queryOptions({}));
+        await queryClient.invalidateQueries(trpc.goals.getManyByStatus.queryOptions({}));
         onSuccess?.();
         form.reset();
       },

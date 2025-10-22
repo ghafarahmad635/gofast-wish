@@ -175,3 +175,22 @@
     @apply bg-background text-foreground;
   }
 }
+
+
+@layer utilities {
+  @keyframes slow-move {
+    0% {
+      transform: translate(0px, 0px) scale(1) rotate(0deg);
+    }
+    50% {
+      transform: translate(25px, -25px) scale(1.05) rotate(3deg);
+    }
+    100% {
+      transform: translate(0px, 0px) scale(1) rotate(0deg);
+    }
+  }
+
+  .animate-slow-move {
+    animation: slow-move 14s ease-in-out infinite;
+  }
+}

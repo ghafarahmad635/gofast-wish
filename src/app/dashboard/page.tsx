@@ -1,32 +1,88 @@
-'use client'
+import { auth } from "@/lib/auth";
+import { loadSearchParams } from "@/modules/dashboard/params";
+import GoalsInCompleteHeader from "@/modules/dashboard/ui/components/dashbaord-completed-goals-header";
+import GoalsInCompletedHeader from "@/modules/dashboard/ui/components/dashboard-goalsIncompleted-header";
 
-import { Button } from '@/components/ui/button'
-import { authClient } from '@/lib/auth-client.ts'
-import { useRouter } from 'next/navigation'
-import React from 'react'
+import DashboardHeader from "@/modules/dashboard/ui/components/dashboard-header"
 
-const DashboardPage = () => {
-  const router = useRouter() // ✅ Move this to the top level
+import GoalStatusView, { GoalsViewStatusErrorState, GoalsViewStatusLoadingState } from "@/modules/dashboard/ui/views/goals-status-view"
 
-  const handleSignOut = async () => {
-    try {
-      await authClient.signOut({
-        fetchOptions: {
-          onSuccess: () => {
-            router.push('/sign-in') // ✅ Redirect after successful sign-out
-          },
-        },
-      })
-    } catch (error) {
-      console.error('Sign out failed:', error)
+import GoalsViewCompleted, { GoalsViewCompletedErrorState, GoalsViewCompletedLoadingState } from "@/modules/dashboard/ui/views/goals-views-completed";
+import GoalsViewToComplete, { GoalsViewDashboardErrorState, GoalsVieDashboardLoadingState } from "@/modules/dashboard/ui/views/goals-views-inCompleted";
+
+import { getQueryClient, trpc } from "@/trpc/server";
+import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+import { SearchParams } from "nuqs";
+import { Suspense } from "react";
+import { ErrorBoundary } from "react-error-boundary";
+interface Props {
+  searchParams: Promise<SearchParams>;
+};
+
+
+const DashboardPage = async({searchParams}:Props) => {
+  const filter = await loadSearchParams(searchParams);
+  const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+     if (!session) {
+      redirect("/sign-in");
     }
-  }
+    const queryClient=getQueryClient();
+    void queryClient.prefetchQuery(trpc.goals.getMany.queryOptions({}))
+    void queryClient.prefetchQuery(trpc.goals.getManyByStatus.queryOptions({
+      page: filter.inCompletedPage,
+      status:'incomplete'
+    }));
+    void queryClient.prefetchQuery(trpc.goals.getManyByStatus.queryOptions({
+      page: filter.completedPage,
+      status:"completed"
+    }));
+  
 
   return (
-    <div className="flex flex-col items-center justify-center h-screen gap-4">
-      <h1 className="text-2xl font-semibold">Dashboard</h1>
-      <Button onClick={handleSignOut}>Sign Out</Button>
-    </div>
+   <>
+   <DashboardHeader/>
+   <HydrationBoundary state={dehydrate(queryClient)}>
+     <Suspense fallback={<GoalsViewStatusLoadingState />}>
+     <ErrorBoundary fallback={<GoalsViewStatusErrorState />}>
+      <GoalStatusView/>
+     </ErrorBoundary>
+     
+     </Suspense>
+    
+   </HydrationBoundary>
+   <div>
+    Habit Tracker
+   </div>
+   {/* inCompleted goals section */}
+   <GoalsInCompletedHeader/>
+   <HydrationBoundary state={dehydrate(queryClient)}>
+    <Suspense fallback={<GoalsVieDashboardLoadingState />}>
+     <ErrorBoundary fallback={<GoalsViewDashboardErrorState />}>
+      <GoalsViewToComplete/>
+     </ErrorBoundary>
+     
+     </Suspense>
+   </HydrationBoundary>
+
+  {/* completed goals section */}
+   <GoalsInCompleteHeader/>
+   <HydrationBoundary state={dehydrate(queryClient)}>
+    <Suspense fallback={<GoalsViewCompletedLoadingState />}>
+     <ErrorBoundary fallback={<GoalsViewCompletedErrorState />}>
+      <GoalsViewCompleted/>
+     </ErrorBoundary>
+     
+     </Suspense>
+   </HydrationBoundary>
+   
+   
+   </>
+      
+    
   )
 }
 

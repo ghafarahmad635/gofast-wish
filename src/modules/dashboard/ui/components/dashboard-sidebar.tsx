@@ -34,9 +34,9 @@ const DashboardSidebar = () => {
   return (
    <Sidebar>
        <SidebarHeader className="text-sidebar-accent-foreground">
-        <Link href="/" className="flex items-center gap-2 px-2 pt-2">
+        <Link href={`/dashboard`} className="flex items-center gap-2 px-2 pt-2">
           <Image src="/logo.png" height={45} width={45} alt="GoFGast Wish" />
-          <p className=" text-lg font-semibold">GoFGast Wish</p>
+          <p className=" text-lg font-semibold">GoFast Wish</p>
         </Link>
       </SidebarHeader>
        <div className="px-4 py-2">
