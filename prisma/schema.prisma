@@ -36,6 +36,7 @@ model User {
 
   stripeCustomerId String?
    orders        Order[] 
+    habits      Habit[] 
 
   @@map("user")
 }
@@ -156,3 +157,35 @@ model Media {
 }
 
 
+
+
+model Habit {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  frequency   String   // "daily", "weekly"
+  startDate   DateTime @default(now())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  completions HabitCompletion[]
+  createdAt   DateTime @default(now())
+}
+
+
+model HabitCompletion {
+  id          String   @id @default(cuid())
+  habitId     String
+  date        DateTime
+  status      CompletionStatus @default(pending)
+  createdAt   DateTime @default(now())
+
+  habit       Habit    @relation(fields: [habitId], references: [id])
+
+  @@unique([habitId, date], name: "habitId_date") 
+}
+
+enum CompletionStatus {
+  completed
+  skipped
+  pending
+}
