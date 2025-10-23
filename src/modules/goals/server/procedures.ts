@@ -1,5 +1,5 @@
 import { db } from "@/lib/prisma";
-import { baseProcedure, createTRPCRouter, protectedProcedure } from "@/trpc/init";
+import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
 import { TRPCError } from "@trpc/server";
 import { goalInsertSchema, goalUpdateSchema } from "../schmas";
 import z from "zod";
