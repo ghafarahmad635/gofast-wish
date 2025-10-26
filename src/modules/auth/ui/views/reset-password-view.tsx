@@ -23,7 +23,7 @@ export default function ResetPasswordView() {
       password,
     })
 
-    if (error) setError(error.message)
+    if (error) setError(error.message || "error")
     else {
       alert('✅ Password reset successfully')
       router.push('/sign-in')

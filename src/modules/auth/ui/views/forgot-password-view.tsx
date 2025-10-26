@@ -21,7 +21,7 @@ export default function ForgotPasswordView() {
       email,
     })
 
-    if (error) setError(error.message)
+    if (error) setError(error.message || "Error")
     else {
       setSuccess(true)
       router.push(`/reset-password?email=${encodeURIComponent(email)}`)
