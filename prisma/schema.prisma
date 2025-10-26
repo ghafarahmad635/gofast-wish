@@ -35,8 +35,8 @@ model User {
   media       Media[] // ✅ Added reverse relation
 
   stripeCustomerId String?
-   orders        Order[] 
-    habits      Habit[] 
+  orders        Order[] 
+  habits      Habit[] 
 
   @@map("user")
 }

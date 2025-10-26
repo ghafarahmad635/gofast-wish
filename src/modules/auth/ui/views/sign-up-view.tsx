@@ -52,16 +52,16 @@ const SignUpView = () => {
   const onSubmit = async (data: z.infer<typeof formSchemasignup>) => {
     setError(null)
     const { error } = await authClient.signUp.email(
-      {
+       {
         name: data.name,
         email: data.email,
         password: data.password,
-        callbackURL: "/",
+        callbackURL: "/verify-otp?email=" + encodeURIComponent(data.email),
       },
       {
         onSuccess: () => {
           setError(null)
-          router.push("/")
+          router.push(`/verify-otp?email=${encodeURIComponent(data.email)}`);
         },
         onError: ({ error }) => {
           setError(error.message)

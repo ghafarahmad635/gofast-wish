@@ -1,28 +1,24 @@
 import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import Footer from "@/modules/landingpage/ui/components/footer";
+import TopHeader from "@/modules/landingpage/ui/components/top-header";
+import LandingPageView from "@/modules/landingpage/ui/views/landing-page-view";
+
 
 
 
 export default async function Home() {
-   const session = await auth.api.getSession({
-        headers: await headers()
-    })
+   
   
-if(session){
+
  return(
-  <div>
-     <h1>Welcome {session.user.name}</h1>
-     <p>{session.user.id}</p>
-     <p>{session.user.loginStatus}</p>
-     <p>{session.user.role}</p>
-  </div>
+  <>
+  <TopHeader/>
+  <LandingPageView/>
+  <Footer/>
+  </>
  
  
  )
-}
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <div>Not authenticated</div>
-    </div>
-  );
+
+ 
 }
