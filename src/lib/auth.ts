@@ -107,47 +107,73 @@ export const auth = betterAuth({
       },
 
       onEvent: async (event) => {
-        console.log(`⚡ [Stripe] Webhook Event Received: ${event.type}`);
+          console.log(`⚡ [Stripe] Webhook Event Received: ${event.type}`);
 
-        if (event.type === "invoice.paid") {
-          console.log("💰 [Stripe] Handling invoice.paid event...");
-          const invoice = event.data.object as Stripe.Invoice;
-          const customerId = invoice.customer as string;
-          console.log("📦 [Stripe] Invoice data:", {
-            id: invoice.id,
-            customerId,
-            amount: invoice.amount_paid,
-          });
+          if (event.type === "invoice.paid") {
+            console.log("💰 [Stripe] Handling invoice.paid event...");
+            const invoice = event.data.object as Stripe.Invoice;
+            const customerId = invoice.customer as string;
 
-          try {
-            const user = await db.user.findFirst({
-              where: { stripeCustomerId: customerId },
+            console.log("📦 [Stripe] Invoice data:", {
+              id: invoice.id,
+              customerId,
+              amount: invoice.amount_paid,
             });
 
-            if (!user) {
-              console.warn("⚠️ [Stripe] No matching user found for invoice:", customerId);
-              return;
+            try {
+              const user = await db.user.findFirst({
+                where: { stripeCustomerId: customerId },
+              });
+
+              if (!user) {
+                console.warn("⚠️ [Stripe] No matching user found for invoice:", customerId);
+                return;
+              }
+
+              console.log("👤 [Stripe] Found user:", user.email);
+
+              // ✅ Create new order
+              const subscriptionId =
+                typeof (invoice as any).subscription === "string"
+                  ? (invoice as any).subscription
+                  : null;
+
+              const order = await db.order.create({
+                data: {
+                  userId: user.id,
+                  stripeInvoiceId: invoice.id,
+                  stripeSubscriptionId: subscriptionId,
+                  stripeCustomerId: customerId,
+                  amount: (invoice.amount_paid ?? 0) / 100,
+                  currency: invoice.currency || "usd",
+                  status: invoice.status ?? "paid",
+                  hostedInvoiceUrl: invoice.hosted_invoice_url || null,
+                  invoicePdfUrl: invoice.invoice_pdf || null,
+                  customerEmail: invoice.customer_email || user.email,
+                  customerName: invoice.customer_name || user.name,
+                },
+              });
+
+              console.log(`💾 [Stripe] Order created successfully: ${order.id}`);
+
+              // ✅ Send payment receipt email
+              await sendEmail({
+                to: user.email,
+                subject: "Payment Receipt — GoFast Wish",
+                react: PaymentReceiptEmail({
+                  name: user.name ?? "Valued Customer",
+                  amount: (invoice.amount_paid ?? 0) / 100,
+                  date: new Date(invoice.created * 1000).toLocaleDateString(),
+                  invoiceUrl: invoice.hosted_invoice_url,
+                }),
+              });
+
+              console.log("✅ [Stripe] Payment receipt email sent:", user.email);
+            } catch (err) {
+              console.error("❌ [Stripe] Error handling invoice.paid:", err);
             }
-
-            console.log("👤 [Stripe] Found user:", user.email);
-
-            await sendEmail({
-              to: user.email,
-              subject: "Payment Receipt — GoFast Wish",
-              react: PaymentReceiptEmail({
-                name: user.name ?? "Valued Customer",
-                amount: (invoice.amount_paid ?? 0) / 100,
-                date: new Date(invoice.created * 1000).toLocaleDateString(),
-                invoiceUrl: invoice.hosted_invoice_url,
-              }),
-            });
-
-            console.log("✅ [Stripe] Payment receipt email sent:", user.email);
-          } catch (err) {
-            console.error("❌ [Stripe] Error handling invoice.paid:", err);
           }
-        }
-      },
+        },
 
       subscription: {
         enabled: true,
