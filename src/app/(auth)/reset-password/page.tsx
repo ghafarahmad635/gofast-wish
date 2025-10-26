@@ -1,11 +1,10 @@
 import ResetPasswordView from '@/modules/auth/ui/views/reset-password-view'
-import React from 'react'
 
-const page = () => {
-  return (
-    <ResetPasswordView/>
-    
-  )
+interface ResetPasswordPageProps {
+  searchParams?: { email?: string }
 }
 
-export default page
+export default async function ResetPasswordPage({ searchParams }: ResetPasswordPageProps) {
+  const email = searchParams?.email ?? ''
+  return <ResetPasswordView email={email} />
+}

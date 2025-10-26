@@ -178,6 +178,7 @@ export const auth = betterAuth({
               },
 
               onTrialEnd: async ({ subscription }) => {
+                
                 console.log("⏳ [Stripe] Trial ended:", subscription.id);
 
                 const user = await db.user.findFirst({

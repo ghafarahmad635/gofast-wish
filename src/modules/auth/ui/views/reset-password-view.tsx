@@ -1,15 +1,18 @@
 'use client'
-import { useState } from 'react'
 
+import { useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertTitle } from '@/components/ui/alert'
-import { useSearchParams, useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { authClient } from '@/lib/auth-client.ts'
 
-export default function ResetPasswordView() {
-  const searchParams = useSearchParams()
-  const email = searchParams.get('email') || ''
+
+interface ResetPasswordViewProps {
+  email: string
+}
+
+export default function ResetPasswordView({ email }: ResetPasswordViewProps) {
   const [otp, setOtp] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -23,8 +26,9 @@ export default function ResetPasswordView() {
       password,
     })
 
-    if (error) setError(error.message || "error")
-    else {
+    if (error) {
+      setError(error.message || 'Something went wrong')
+    } else {
       alert('✅ Password reset successfully')
       router.push('/sign-in')
     }
@@ -34,7 +38,7 @@ export default function ResetPasswordView() {
     <div className="max-w-sm mx-auto mt-24 space-y-6 text-center">
       <h1 className="text-2xl font-bold">Reset Password</h1>
       <p className="text-muted-foreground">
-        Enter the code we emailed you and your new password.
+        Enter the code we emailed to {email || 'your account'} and your new password.
       </p>
 
       <Input
@@ -48,6 +52,7 @@ export default function ResetPasswordView() {
         onChange={(e) => setPassword(e.target.value)}
         placeholder="New password"
       />
+
       <Button onClick={resetPassword} className="w-full">
         Reset Password
       </Button>
