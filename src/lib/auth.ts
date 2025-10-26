@@ -76,21 +76,33 @@ export const auth = betterAuth({
       createCustomerOnSignUp: true,
 
       onCustomerCreate: async ({ stripeCustomer, user }) => {
-        console.log("🟢 [Stripe] onCustomerCreate triggered for:", user.email);
+        console.log("🟢 [Stripe] Customer created for:", user.email);
 
         try {
+          // ✅ Store the Stripe Customer ID in your DB
+          await db.user.update({
+            where: { id: user.id },
+            data: { stripeCustomerId: stripeCustomer.id },
+          });
+
+          console.log(
+            `✅ [Stripe] Saved stripeCustomerId (${stripeCustomer.id}) for user ${user.email}`
+          );
+
+          // ✅ Optional welcome email
           await sendEmail({
             to: user.email,
             subject: "Welcome to GoFast Wish — Your Stripe Account is Ready",
             react: SubscriptionActivatedEmail({
               title: "Welcome to GoFast Wish",
               message:
-                "Your account is connected to our payment system. You can now start your subscription or upgrade anytime.",
+                "Your account is now connected to our payment system. You can start your subscription or upgrade anytime.",
             }),
           });
-          console.log("✅ [Stripe] Welcome email sent successfully:", user.email);
+
+          console.log(`📧 [Stripe] Welcome email sent to: ${user.email}`);
         } catch (err) {
-          console.error("❌ [Stripe] Failed to send welcome email:", err);
+          console.error("❌ [Stripe] Failed to save stripeCustomerId:", err);
         }
       },
 
