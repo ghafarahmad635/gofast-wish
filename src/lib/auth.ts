@@ -187,13 +187,13 @@ export const auth = betterAuth({
           {
             name: "standard",
             priceId: "price_1SKYqAD8qR70pjFErK5C207r",
-            annualDiscountPriceId: "price_1SN2xZD8qR70pjFERsxV3Lrs", // Yearly price ID
+            annualDiscountPriceId: "price_1SN4QaD8qR70pjFEL3eaU7HH", // Yearly price ID
             limits: {  createWishes: PLAN_LIMITS.standard.wishes,createHabits:PLAN_LIMITS.standard.habits },
           },
           {
             name: "pro",
             priceId: "price_1SKYsZD8qR70pjFEYXwZOCm0",
-            annualDiscountPriceId: "price_1SN2zQD8qR70pjFEtcrN3RZg", // Yearly price ID
+            annualDiscountPriceId: "price_1SN4PED8qR70pjFE91x8HAu9", // Yearly price ID
             // limits: { createWishes: PLAN_LIMITS.pro.wishes,createHabits:PLAN_LIMITS.pro.habits },
             freeTrial: {
               days: 7,

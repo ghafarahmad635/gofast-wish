@@ -26,6 +26,7 @@ type PricingCardProps = {
   plan: Plan
   frequency?: FREQUENCY
   isActive?: boolean
+  activeSubscriptionId?: string | null
 } & React.ComponentProps<"div">
 
 export function PricingCard({
@@ -33,27 +34,59 @@ export function PricingCard({
   frequency = "monthly",
   className,
   isActive = false,
+  activeSubscriptionId = null,
   ...props
 }: PricingCardProps) {
   const [loading, setLoading] = useState(false)
   const isFree = plan.name.toLowerCase() === "free"
 
   const handleSubscribe = async () => {
-    if (isFree || isActive) return // prevent checkout
+    if (isFree) return // free plan handled in app
 
     try {
       setLoading(true)
+
+      // ⚡ If user already subscribed, redirect to billing portal instead of re-subscribing
+      if (isActive && activeSubscriptionId) {
+        toast.info("Redirecting to your billing portal...")
+
+        const { data, error } = await authClient.subscription.billingPortal({
+         
+          returnUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/upgrade`,
+          
+         
+        })
+
+        if (error) {
+          console.error("❌ Failed to open billing portal:", error)
+          toast.error("Unable to open billing portal.")
+          return
+        }
+
+        if (data?.url) {
+          window.location.href = data.url
+        } else {
+          toast.error("Billing portal link unavailable.")
+        }
+
+        return // ✅ Stop here, don't continue to upgrade flow
+      }
+
+      // 🛒 Otherwise, start checkout session
       toast.info("Redirecting to checkout...")
 
       const { data, error } = await authClient.subscription.upgrade(
         {
           plan: plan.name.toLowerCase(),
           annual: frequency === "yearly",
-          successUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard`,
+          subscriptionId: activeSubscriptionId ?? undefined,
+          successUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/upgrade`,
           cancelUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/upgrade`,
         },
         {
-          onSuccess: () => console.log("✅ Checkout initiated"),
+          onSuccess: () => {
+            toast.success("Checkout initiated")
+          },
           onError: ({ error }) =>
             console.error("❌ Checkout initiation failed:", error),
         }
@@ -64,8 +97,7 @@ export function PricingCard({
         return
       }
 
-      if (data?.url) window.location.href = data.url
-      else toast.error("No checkout URL returned.")
+     
     } catch (err) {
       console.error("⚠️ Error during checkout:", err)
       toast.error("Something went wrong. Please try again.")
@@ -73,6 +105,16 @@ export function PricingCard({
       setLoading(false)
     }
   }
+
+  // 🎯 Calculate yearly discount badge
+  const discount =
+    plan.price.yearly > 0
+      ? Math.round(
+          ((plan.price.monthly * 12 - plan.price.yearly) /
+            (plan.price.monthly * 12)) *
+            100
+        )
+      : 0
 
   return (
     <div
@@ -83,6 +125,7 @@ export function PricingCard({
       )}
       {...props}
     >
+      {/* Header */}
       <div
         className={cn(
           "rounded-t-lg border-b p-4",
@@ -101,10 +144,16 @@ export function PricingCard({
               Active
             </p>
           )}
+          {frequency === "yearly" && discount > 0 && !isFree && (
+            <p className="flex items-center gap-1 rounded-md border bg-primary px-2 py-0.5 text-primary-foreground text-xs">
+              {discount}% off
+            </p>
+          )}
         </div>
 
         <div className="font-medium text-lg">{plan.name}</div>
         <p className="font-normal text-muted-foreground text-sm">{plan.info}</p>
+
         <h3 className="mt-6 mb-2 flex items-end gap-1">
           <span className="font-extrabold text-3xl">
             ${plan.price[frequency]}
@@ -117,6 +166,7 @@ export function PricingCard({
         </h3>
       </div>
 
+      {/* Features */}
       <div
         className={cn(
           "space-y-4 px-4 pt-6 pb-8 text-muted-foreground text-sm",
@@ -144,6 +194,7 @@ export function PricingCard({
         ))}
       </div>
 
+      {/* Button */}
       <div
         className={cn(
           "mt-auto w-full rounded-b-lg border-t p-3",
@@ -154,9 +205,13 @@ export function PricingCard({
           className="w-full"
           variant={isActive ? "outline" : plan.highlighted ? "default" : "outline"}
           onClick={handleSubscribe}
-          disabled={loading || isFree || isActive}
+          disabled={loading || isFree}
         >
-          {isActive ? "Active Plan" : loading ? "Redirecting..." : plan.btn.text}
+          {loading
+            ? "Redirecting..."
+            : isActive
+            ? "Manage Subscription"
+            : plan.btn.text}
         </Button>
       </div>
     </div>

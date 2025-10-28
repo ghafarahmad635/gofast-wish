@@ -10,6 +10,7 @@ interface PricingSectionProps extends React.ComponentProps<"div"> {
   heading: string
   description?: string
   activePlan?: string
+  activeSubscriptionId?: string | null
 }
 
 export function PricingSection({
@@ -17,6 +18,7 @@ export function PricingSection({
   heading,
   description,
   activePlan = "free",
+  activeSubscriptionId,
   ...props
 }: PricingSectionProps) {
   const [frequency, setFrequency] = React.useState<FREQUENCY>("monthly")
@@ -49,6 +51,7 @@ export function PricingSection({
             key={plan.name}
             plan={plan}
             isActive={activePlan.toLowerCase() === plan.name.toLowerCase()}
+            activeSubscriptionId={activeSubscriptionId ?? null}
           />
         ))}
       </div>

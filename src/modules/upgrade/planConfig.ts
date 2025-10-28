@@ -27,8 +27,8 @@ export const PLAN_LIMITS = {
 
 export const PLAN_PRICES = {
   free: { monthly: 0, yearly: 0 },
-  standard: { monthly: 9, yearly: 90 },
-  pro: { monthly: 29, yearly: 290 },
+  standard: { monthly: 5, yearly: 48 },
+  pro: { monthly: 15, yearly: 144 },
 } as const
 
 export const PLAN_INFO = {

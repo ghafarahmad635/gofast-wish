@@ -8,6 +8,7 @@ import { PLAN_FEATURES, PLAN_INFO, PLAN_PRICES, PlanName } from "../../planConfi
 
 export default function PricingPage() {
   const [activePlan, setActivePlan] = useState<PlanName>("free")
+  const [activeSubscriptionId, setActiveSubscriptionId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
   const fetchActivePlan = async () => {
@@ -23,13 +24,18 @@ export default function PricingPage() {
       }
     )
 
+    
+
     if (error) {
       setActivePlan("free")
+      setActiveSubscriptionId(null)
     } else {
+        console.log(subscriptions)
       const active = subscriptions?.find(
         (sub) => sub.status === "active" || sub.status === "trialing"
       )
       setActivePlan((active?.plan as PlanName) || "free")
+      setActiveSubscriptionId(active?.stripeSubscriptionId ?? null)
     }
     setLoading(false)
   }
@@ -62,6 +68,7 @@ export default function PricingPage() {
       }
       plans={plans}
       activePlan={activePlan}
+      activeSubscriptionId={activeSubscriptionId}
     />
   )
 }
