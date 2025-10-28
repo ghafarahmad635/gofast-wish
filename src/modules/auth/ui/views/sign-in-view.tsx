@@ -158,6 +158,8 @@ const SignInView = () => {
                         </div>
                       </FormControl>
                       <FormMessage />
+
+                      
                     </FormItem>
                   )}
                 />
@@ -244,7 +246,15 @@ const SignInView = () => {
                   <Link href="/sign-up" className="underline underline-offset-4">
                     Sign up
                   </Link>
+                  <Link
+                          href="/forgot-password"
+                          className="text-sm text-muted-foreground hover:text-primary block mt-1"
+                        >
+                          Forgot password?
+                        </Link>
                 </div>
+                
+                
               </div>
             </form>
           </Form>

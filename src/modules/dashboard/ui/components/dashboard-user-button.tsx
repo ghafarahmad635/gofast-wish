@@ -5,7 +5,8 @@ import { Drawer, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, D
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { authClient } from '@/lib/auth-client.ts';
-import { ChevronDownIcon, CreditCardIcon, LogOutIcon } from 'lucide-react';
+import { ChevronDownIcon, CreditCardIcon, LogOutIcon, UserIcon } from 'lucide-react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import React from 'react'
 import { toast } from 'sonner';
@@ -122,7 +123,16 @@ const DashboardUserButton = () => {
           </div>
         </DropdownMenuLabel>
          <DropdownMenuSeparator />
-         <DropdownMenuItem
+         <DropdownMenuItem asChild>
+          <Link
+            href="/profile"
+            className="flex items-center justify-between w-full cursor-pointer"
+          >
+            <span>Profile</span>
+            <UserIcon className="size-4" />
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem
           onClick={handleBillingPortal}
           className="cursor-pointer flex items-center justify-between"
         >

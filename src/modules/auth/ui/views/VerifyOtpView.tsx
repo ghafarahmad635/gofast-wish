@@ -25,7 +25,7 @@ export default function VerifyOtpView({ email }: { email: string }) {
   const welcomeEmail = useMutation(
     trpc.auth.sendWelcomeEmail.mutationOptions({
       onSuccess: () => {
-        toast.success("Welcome email sent successfully!")
+        
       },
       onError: (err) => {
         console.error("❌ Failed to send welcome email:", err)
