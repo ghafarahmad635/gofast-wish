@@ -50,7 +50,7 @@ export function PricingCard({
           plan: plan.name.toLowerCase(),
           annual: frequency === "yearly",
           successUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard`,
-          cancelUrl: `${process.env.NEXT_PUBLIC_APP_URL}/pricing`,
+          cancelUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/upgrade`,
         },
         {
           onSuccess: () => console.log("✅ Checkout initiated"),
