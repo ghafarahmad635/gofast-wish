@@ -3,10 +3,10 @@ import React, { useEffect, useState } from "react"
 import { toast } from "sonner"
 import { PricingSection } from "../components/PricingSection"
 import { authClient } from "@/lib/auth-client.ts"
-import { PLAN_FEATURES, PLAN_INFO, PLAN_PRICES, PlanName } from "../../planConfig"
+import { PLAN_FEATURES, PLAN_INFO, PLAN_PRICES, PLAN_TRIAL_DAYS, PlanName } from "../../planConfig"
 
 
-export default function PricingPage() {
+export default function PricingView() {
   const [activePlan, setActivePlan] = useState<PlanName>("free")
   const [activeSubscriptionId, setActiveSubscriptionId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -49,14 +49,16 @@ export default function PricingPage() {
     info: PLAN_INFO[plan],
     price: PLAN_PRICES[plan],
     features: PLAN_FEATURES(plan),
+    trialDays: PLAN_TRIAL_DAYS[plan], 
     btn: {
       text:
         plan === "free"
           ? "Current Plan"
           : `Upgrade to ${plan.charAt(0).toUpperCase() + plan.slice(1)}`,
     },
-    highlighted: plan === "pro",
+    highlighted: plan === "standard",
   }))
+
 
   return (
     <PricingSection

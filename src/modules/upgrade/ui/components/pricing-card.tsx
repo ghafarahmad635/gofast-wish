@@ -19,14 +19,16 @@ export type Plan = {
   price: { monthly: number; yearly: number }
   features: { text: string; tooltip?: string }[]
   btn: { text: string }
-  highlighted?: boolean
+  highlighted?: boolean,
+   trialDays?: number
 }
 
 type PricingCardProps = {
   plan: Plan
   frequency?: FREQUENCY
   isActive?: boolean
-  activeSubscriptionId?: string | null
+  activeSubscriptionId?: string | null,
+  
 } & React.ComponentProps<"div">
 
 export function PricingCard({
@@ -164,6 +166,11 @@ export function PricingCard({
               : ""}
           </span>
         </h3>
+        {plan.trialDays && plan.trialDays > 0 && !isActive && (
+          <p className="text-xs font-medium text-green-600 mb-2">
+            {plan.trialDays}-day free trial included
+          </p>
+        )}
       </div>
 
       {/* Features */}

@@ -16,7 +16,7 @@ import { PaymentReceiptEmail } from "@/components/emails-templates/subscription/
 import { TrialStartedEmail } from "@/components/emails-templates/subscription/TrialStartedEmail";
 import { TrialEndedEmail } from "@/components/emails-templates/subscription/TrialEndedEmail";
 import { SubscriptionCanceledEmail } from "@/components/emails-templates/subscription/SubscriptionCanceledEmail";
-import { PLAN_LIMITS } from "@/modules/upgrade/planConfig";
+import { PLAN_LIMITS, PLAN_TRIAL_DAYS } from "@/modules/upgrade/planConfig";
 
 
 
@@ -79,20 +79,12 @@ export const auth = betterAuth({
       createCustomerOnSignUp: true,
 
       onCustomerCreate: async ({ stripeCustomer, user }) => {
-        console.log("🟢 [Stripe] Customer created for:", user.email);
-
         try {
-          // ✅ Store the Stripe Customer ID in your DB
           await db.user.update({
             where: { id: user.id },
             data: { stripeCustomerId: stripeCustomer.id },
-          });
+          })
 
-          console.log(
-            `✅ [Stripe] Saved stripeCustomerId (${stripeCustomer.id}) for user ${user.email}`
-          );
-
-          // ✅ Optional welcome email
           await sendEmail({
             to: user.email,
             subject: "Welcome to GoFast Wish — Your Stripe Account is Ready",
@@ -101,148 +93,144 @@ export const auth = betterAuth({
               message:
                 "Your account is now connected to our payment system. You can start your subscription or upgrade anytime.",
             }),
-          });
-
-          console.log(`📧 [Stripe] Welcome email sent to: ${user.email}`);
+          })
         } catch (err) {
-          console.error("❌ [Stripe] Failed to save stripeCustomerId:", err);
+          console.error("[Stripe:onCustomerCreate] Failed:", err)
         }
       },
 
       onEvent: async (event) => {
-          console.log(`⚡ [Stripe] Webhook Event Received: ${event.type}`);
+        if (event.type !== "invoice.paid") return
 
-          if (event.type === "invoice.paid") {
-            console.log("💰 [Stripe] Handling invoice.paid event...");
-            const invoice = event.data.object as Stripe.Invoice;
-            const customerId = invoice.customer as string;
+        try {
+          const invoice = event.data.object as Stripe.Invoice
+          const customerId = invoice.customer as string
 
-            console.log("📦 [Stripe] Invoice data:", {
-              id: invoice.id,
-              customerId,
-              amount: invoice.amount_paid,
-            });
+          const user = await db.user.findFirst({
+            where: { stripeCustomerId: customerId },
+          })
+          if (!user) return
 
-            try {
-              const user = await db.user.findFirst({
-                where: { stripeCustomerId: customerId },
-              });
+          const subscriptionId =
+            typeof (invoice as any).subscription === "string"
+              ? (invoice as any).subscription
+              : null
 
-              if (!user) {
-                console.warn("⚠️ [Stripe] No matching user found for invoice:", customerId);
-                return;
-              }
+          await db.order.create({
+            data: {
+              userId: user.id,
+              stripeInvoiceId: invoice.id,
+              stripeSubscriptionId: subscriptionId,
+              stripeCustomerId: customerId,
+              amount: (invoice.amount_paid ?? 0) / 100,
+              currency: invoice.currency || "usd",
+              status: invoice.status ?? "paid",
+              hostedInvoiceUrl: invoice.hosted_invoice_url || null,
+              invoicePdfUrl: invoice.invoice_pdf || null,
+              customerEmail: invoice.customer_email || user.email,
+              customerName: invoice.customer_name || user.name,
+            },
+          })
 
-              console.log("👤 [Stripe] Found user:", user.email);
-
-              // ✅ Create new order
-              const subscriptionId =
-                typeof (invoice as any).subscription === "string"
-                  ? (invoice as any).subscription
-                  : null;
-
-              const order = await db.order.create({
-                data: {
-                  userId: user.id,
-                  stripeInvoiceId: invoice.id,
-                  stripeSubscriptionId: subscriptionId,
-                  stripeCustomerId: customerId,
-                  amount: (invoice.amount_paid ?? 0) / 100,
-                  currency: invoice.currency || "usd",
-                  status: invoice.status ?? "paid",
-                  hostedInvoiceUrl: invoice.hosted_invoice_url || null,
-                  invoicePdfUrl: invoice.invoice_pdf || null,
-                  customerEmail: invoice.customer_email || user.email,
-                  customerName: invoice.customer_name || user.name,
-                },
-              });
-
-              console.log(`💾 [Stripe] Order created successfully: ${order.id}`);
-
-              // ✅ Send payment receipt email
-              await sendEmail({
-                to: user.email,
-                subject: "Payment Receipt — GoFast Wish",
-                react: PaymentReceiptEmail({
-                  name: user.name ?? "Valued Customer",
-                  amount: (invoice.amount_paid ?? 0) / 100,
-                  date: new Date(invoice.created * 1000).toLocaleDateString(),
-                  invoiceUrl: invoice.hosted_invoice_url,
-                }),
-              });
-
-              console.log("✅ [Stripe] Payment receipt email sent:", user.email);
-            } catch (err) {
-              console.error("❌ [Stripe] Error handling invoice.paid:", err);
-            }
-          }
-        },
+          await sendEmail({
+            to: user.email,
+            subject: "Payment Receipt — GoFast Wish",
+            react: PaymentReceiptEmail({
+              name: user.name ?? "Valued Customer",
+              amount: (invoice.amount_paid ?? 0) / 100,
+              date: new Date(invoice.created * 1000).toLocaleDateString(),
+              invoiceUrl: invoice.hosted_invoice_url,
+            }),
+          })
+        } catch (err) {
+          console.error("[Stripe:onEvent] invoice.paid handler failed:", err)
+        }
+      },
 
       subscription: {
         enabled: true,
         requireEmailVerification: false,
 
         plans: [
-          
           {
             name: "standard",
             priceId: "price_1SKYqAD8qR70pjFErK5C207r",
-            annualDiscountPriceId: "price_1SN4QaD8qR70pjFEL3eaU7HH", // Yearly price ID
-            limits: {  createWishes: PLAN_LIMITS.standard.wishes,createHabits:PLAN_LIMITS.standard.habits },
-          },
-          {
-            name: "pro",
-            priceId: "price_1SKYsZD8qR70pjFEYXwZOCm0",
-            annualDiscountPriceId: "price_1SN4PED8qR70pjFE91x8HAu9", // Yearly price ID
-            // limits: { createWishes: PLAN_LIMITS.pro.wishes,createHabits:PLAN_LIMITS.pro.habits },
-            freeTrial: {
-              days: 7,
-              onTrialStart: async (subscription) => {
-                console.log("🚀 [Stripe] Trial started:", subscription.id);
-
-                const user = await db.user.findFirst({
-                  where: { id: subscription.referenceId },
-                });
-
-                if (user) {
-                  console.log("👤 [Stripe] Sending trial start email to:", user.email);
-                  try {
-                    await sendEmail({
-                      to: user.email,
-                      subject: "Your Free Trial Has Started — GoFast Wish",
-                      react: TrialStartedEmail({ name: user.name ?? "User" }),
-                    });
-                    console.log("✅ [Stripe] Trial start email sent:", user.email);
-                  } catch (err) {
-                    console.error("❌ [Stripe] Failed to send trial start email:", err);
-                  }
-                } else {
-                  console.warn("⚠️ [Stripe] User not found for trial start:", subscription.referenceId);
+            annualDiscountPriceId: "price_1SN4QaD8qR70pjFEL3eaU7HH",
+            freeTrial:{
+               days: PLAN_TRIAL_DAYS.standard,
+               onTrialStart: async (subscription) => {
+                try {
+                  const user = await db.user.findFirst({
+                    where: { id: subscription.referenceId },
+                  })
+                  if (!user) return
+                  await sendEmail({
+                    to: user.email,
+                    subject: "Your Free Trial Has Started — GoFast Wish",
+                    react: TrialStartedEmail({ name: user.name ?? "User" }),
+                  })
+                } catch (err) {
+                  console.error("[Stripe:onTrialStart] Failed:", err)
                 }
               },
 
               onTrialEnd: async ({ subscription }) => {
-                
-                console.log("⏳ [Stripe] Trial ended:", subscription.id);
+                try {
+                  const user = await db.user.findFirst({
+                    where: { id: subscription.referenceId },
+                  })
+                  if (!user) return
+                  await sendEmail({
+                    to: user.email,
+                    subject: "Your Trial Has Ended — Upgrade Now",
+                    react: TrialEndedEmail({ name: user.name ?? "User" }),
+                  })
+                } catch (err) {
+                  console.error("[Stripe:onTrialEnd] Failed:", err)
+                }
+              },
+            },
+            limits: {
+              createWishes: PLAN_LIMITS.standard.wishes,
+              createHabits: PLAN_LIMITS.standard.habits,
+            },
+            
+          },
+          {
+            name: "pro",
+            priceId: "price_1SKYsZD8qR70pjFEYXwZOCm0",
+            annualDiscountPriceId: "price_1SN4PED8qR70pjFE91x8HAu9",
+            freeTrial: {
+              days: PLAN_TRIAL_DAYS.pro,
+              onTrialStart: async (subscription) => {
+                try {
+                  const user = await db.user.findFirst({
+                    where: { id: subscription.referenceId },
+                  })
+                  if (!user) return
+                  await sendEmail({
+                    to: user.email,
+                    subject: "Your Free Trial Has Started — GoFast Wish",
+                    react: TrialStartedEmail({ name: user.name ?? "User" }),
+                  })
+                } catch (err) {
+                  console.error("[Stripe:onTrialStart] Failed:", err)
+                }
+              },
 
-                const user = await db.user.findFirst({
-                  where: { id: subscription.referenceId },
-                });
-
-                if (user) {
-                  console.log("👤 [Stripe] Sending trial end email to:", user.email);
-                  try {
-                    await sendEmail({
-                      to: user.email,
-                      subject: "Your Trial Has Ended — Upgrade Now",
-                      react: TrialEndedEmail({ name: user.name ?? "User" }),
-                    });
-                    console.log("✅ [Stripe] Trial end email sent:", user.email);
-                  } catch (err) {
-                    console.error("❌ [Stripe] Failed to send trial end email:", err);
-                  }
-                } else {
-                  console.warn("⚠️ [Stripe] User not found for trial end:", subscription.referenceId);
+              onTrialEnd: async ({ subscription }) => {
+                try {
+                  const user = await db.user.findFirst({
+                    where: { id: subscription.referenceId },
+                  })
+                  if (!user) return
+                  await sendEmail({
+                    to: user.email,
+                    subject: "Your Trial Has Ended — Upgrade Now",
+                    react: TrialEndedEmail({ name: user.name ?? "User" }),
+                  })
+                } catch (err) {
+                  console.error("[Stripe:onTrialEnd] Failed:", err)
                 }
               },
             },
@@ -250,66 +238,45 @@ export const auth = betterAuth({
         ],
 
         onSubscriptionComplete: async ({ subscription, plan }) => {
-          console.log("🎉 [Stripe] Subscription complete:", {
-            id: subscription.id,
-            plan: plan.name,
-          });
-
-          const user = await db.user.findFirst({
-            where: { id: subscription.referenceId },
-          });
-
-          if (user) {
-            console.log("👤 [Stripe] Sending subscription activation email to:", user.email);
-            try {
-              await sendEmail({
-                to: user.email,
-                subject: `Your ${plan.name} Plan is Active — GoFast Wish`,
-                react: SubscriptionActivatedEmail({
-                  title: "Subscription Activated",
-                  message: `Your ${plan.name} plan is now active. Thank you for joining GoFast Wish.`,
-                }),
-              });
-              console.log("✅ [Stripe] Subscription activation email sent:", user.email);
-            } catch (err) {
-              console.error("❌ [Stripe] Failed to send subscription activation email:", err);
-            }
-          } else {
-            console.warn("⚠️ [Stripe] No user found for subscription:", subscription.referenceId);
+          try {
+            const user = await db.user.findFirst({
+              where: { id: subscription.referenceId },
+            })
+            if (!user) return
+            await sendEmail({
+              to: user.email,
+              subject: `Your ${plan.name} Plan is Active — GoFast Wish`,
+              react: SubscriptionActivatedEmail({
+                title: "Subscription Activated",
+                message: `Your ${plan.name} plan is now active. Thank you for joining GoFast Wish.`,
+              }),
+            })
+          } catch (err) {
+            console.error("[Stripe:onSubscriptionComplete] Failed:", err)
           }
         },
 
         onSubscriptionCancel: async ({ subscription }) => {
-          console.log("⚠️ [Stripe] Subscription canceled:", subscription.id);
-
-          const user = await db.user.findFirst({
-            where: { id: subscription.referenceId },
-          });
-
-          if (user) {
-            console.log("👤 [Stripe] Sending cancellation email to:", user.email);
-            try {
-              await sendEmail({
-                to: user.email,
-                subject: "Subscription Canceled — GoFast Wish",
-                react: SubscriptionCanceledEmail({
-                  name: user.name ?? "User",
-                  message: "We're sorry to see you go. You can reactivate anytime.",
-                }),
-              });
-              console.log("✅ [Stripe] Cancellation email sent:", user.email);
-            } catch (err) {
-              console.error("❌ [Stripe] Failed to send cancellation email:", err);
-            }
-          } else {
-            console.warn("⚠️ [Stripe] No user found for subscription cancel:", subscription.referenceId);
+          try {
+            const user = await db.user.findFirst({
+              where: { id: subscription.referenceId },
+            })
+            if (!user) return
+            await sendEmail({
+              to: user.email,
+              subject: "Subscription Canceled — GoFast Wish",
+              react: SubscriptionCanceledEmail({
+                name: user.name ?? "User",
+                message:
+                  "We're sorry to see you go. You can reactivate anytime from your dashboard.",
+              }),
+            })
+          } catch (err) {
+            console.error("[Stripe:onSubscriptionCancel] Failed:", err)
           }
         },
       },
     }),
-
-    
-    
      // 🔹 Email OTP Verification Plugin
       emailOTP({
       overrideDefaultEmailVerification: true, // replaces link-based verification with OTP
