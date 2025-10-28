@@ -16,7 +16,7 @@ interface SendEmailOptions {
 export async function sendEmail({ to, subject, text, react }: SendEmailOptions) {
   try {
     const { data, error } = await resend.emails.send({
-     from: "GoFast Wish <onboarding@resend.dev>",
+     from: "GoFast Wish <noreply@gofastwish.com>",
       to: to,
       subject,
       text,

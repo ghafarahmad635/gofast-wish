@@ -320,7 +320,7 @@ export const auth = betterAuth({
       
       
       async sendVerificationOTP({ email, otp, type }) {
-        console.log(`🔐 Sending ${type} OTP ${otp} to ${email}`);
+        // console.log(`🔐 Sending ${type} OTP ${otp} to ${email}`);
 
         let subject = "Your GoFast Wish verification code";
         if (type === "sign-in") subject = "Your GoFast Wish sign-in code";
