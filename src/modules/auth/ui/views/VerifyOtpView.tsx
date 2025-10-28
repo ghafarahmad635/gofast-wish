@@ -1,93 +1,148 @@
 'use client'
 
 import { useState } from "react"
-import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertTitle } from "@/components/ui/alert"
 import { useRouter } from "next/navigation"
-
 import { useTRPC } from "@/trpc/client"
 import { useMutation } from "@tanstack/react-query"
+
+import { Card, CardContent } from "@/components/ui/card"
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp"
+import { REGEXP_ONLY_DIGITS_AND_CHARS } from "input-otp"
+import { toast } from "sonner"
 import { authClient } from "@/lib/auth-client.ts"
 
 export default function VerifyOtpView({ email }: { email: string }) {
   const [otp, setOtp] = useState("")
   const [error, setError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [isResending, setIsResending] = useState(false)
   const router = useRouter()
   const trpc = useTRPC()
 
-  // ✅ Setup tRPC mutation
+  // ✅ TRPC mutation for welcome email
   const welcomeEmail = useMutation(
     trpc.auth.sendWelcomeEmail.mutationOptions({
       onSuccess: () => {
-        console.log("✅ Welcome email sent successfully")
+        toast.success("Welcome email sent successfully!")
       },
       onError: (err) => {
-        console.error("❌ Failed to send welcome email", err)
+        console.error("❌ Failed to send welcome email:", err)
+        toast.error("Failed to send welcome email")
       },
     })
   )
 
+  // ✅ Verify OTP
   const verify = async () => {
     setError(null)
-
-    // 1️⃣ Verify OTP through Better Auth
-    const { error } = await authClient.emailOtp.verifyEmail({
-      email,
-      otp,
-    })
-
-    // 2️⃣ If verification successful → send welcome email
-    if (!error) {
-      try {
-        await welcomeEmail.mutateAsync({ email })
-        router.push("/dashboard")
-      } catch (err: any) {
-        console.error(err)
-        setError("Failed to send welcome email")
-      }
-    } else {
-      setError(error.message || "Invalid code. Please try again.")
+    if (otp.length < 6) {
+      toast.error("Please enter a 6-digit code")
+      return
     }
+
+    setIsLoading(true)
+
+    await authClient.emailOtp.verifyEmail(
+      { email, otp },
+      {
+        onSuccess: async () => {
+          setError(null)
+          await welcomeEmail.mutateAsync({ email })
+          toast.success("✅ You successfully verified your email")
+          router.push("/dashboard")
+        },
+        onError: ({ error }) => {
+          console.error("❌ OTP verification failed:", error)
+          setError(error.message)
+          toast.error("Invalid or expired OTP. Please try again.")
+        },
+      }
+    )
+
+    setIsLoading(false)
   }
 
+  // ✅ Resend OTP
   const resend = async () => {
-    try {
-      await authClient.emailOtp.sendVerificationOtp({
-        email,
-        type: "email-verification",
-      })
-      alert("📧 OTP resent successfully.")
-    } catch (err) {
-      console.error("Resend error:", err)
-      alert("Failed to resend OTP.")
-    }
+    setIsResending(true)
+    await authClient.emailOtp.sendVerificationOtp(
+      { email, type: "email-verification" },
+      {
+        onSuccess: () => {
+          setError(null)
+          toast.success("📩 A new verification code was sent to your email")
+        },
+        onError: ({ error }) => {
+          console.error("❌ Failed to resend OTP:", error)
+          setError(error.message)
+          toast.error("Failed to resend verification code. Try again later.")
+        },
+      }
+    )
+    setIsResending(false)
   }
 
   return (
-    <div className="max-w-sm mx-auto text-center space-y-4 mt-16">
-      <h2 className="text-xl font-bold">Verify your email</h2>
-      <p className="text-muted-foreground">Enter the code we sent to {email}</p>
+    <div className="flex justify-center items-center">
+      <Card className="max-w-sm w-full shadow-lg">
+        <CardContent className="p-6 space-y-6 text-center">
+          <h2 className="text-xl font-bold">Verify your email</h2>
+          <p className="text-muted-foreground text-sm">
+            Enter the 6-digit code we sent to <strong>{email}</strong>
+          </p>
 
-      <Input
-        value={otp}
-        onChange={(e) => setOtp(e.target.value)}
-        placeholder="Enter 6-digit code"
-        className="text-center tracking-widest"
-      />
+          {/* ✅ OTP Input */}
+          <InputOTP
+            maxLength={6}
+            pattern={REGEXP_ONLY_DIGITS_AND_CHARS}
+            value={otp}
+            onChange={setOtp}
+            className="justify-center flex"
+          >
+            <InputOTPGroup className="w-full flex items-center justify-center">
+              {[...Array(6)].map((_, i) => (
+                <InputOTPSlot
+                  key={i}
+                  index={i}
+                  className="border-primary border-[1px] text-lg h-12 w-10  text-center font-semibold focus:ring-2 focus:ring-primary"
+                />
+              ))}
+            </InputOTPGroup>
+          </InputOTP>
 
-      <Button className="w-full" onClick={verify}>
-        Verify
-      </Button>
-      <Button variant="link" onClick={resend}>
-        Resend Code
-      </Button>
+          {/* ✅ Verify Button with Spinner */}
+          <Button className="w-full" onClick={verify} disabled={isLoading}>
+            {isLoading ? (
+              <div className="flex items-center justify-center gap-2">
+                <span className="h-4 w-4 border-2 border-white/60 border-t-transparent rounded-full animate-spin"></span>
+                Verifying...
+              </div>
+            ) : (
+              "Verify"
+            )}
+          </Button>
 
-      {error && (
-        <Alert className="bg-destructive/10 border-none">
-          <AlertTitle>{error}</AlertTitle>
-        </Alert>
-      )}
+          {/* ✅ Resend Button with Spinner */}
+          <Button variant="link" onClick={resend} disabled={isResending}>
+            {isResending ? (
+              <div className="flex items-center justify-center gap-2">
+                <span className="h-4 w-4 border-2 border-primary/50 border-t-transparent rounded-full animate-spin"></span>
+                Sending...
+              </div>
+            ) : (
+              "Resend Code"
+            )}
+          </Button>
+
+          {error && (
+            <Alert className="bg-destructive/10 border-none">
+              <AlertTitle>{error}</AlertTitle>
+            </Alert>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }

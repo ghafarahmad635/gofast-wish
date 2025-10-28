@@ -16,6 +16,7 @@ import { PaymentReceiptEmail } from "@/components/emails-templates/subscription/
 import { TrialStartedEmail } from "@/components/emails-templates/subscription/TrialStartedEmail";
 import { TrialEndedEmail } from "@/components/emails-templates/subscription/TrialEndedEmail";
 import { SubscriptionCanceledEmail } from "@/components/emails-templates/subscription/SubscriptionCanceledEmail";
+import { PLAN_LIMITS } from "@/modules/upgrade/planConfig";
 
 
 
@@ -37,6 +38,7 @@ export const auth = betterAuth({
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     },
   },
+  
   emailVerification: {
         autoSignInAfterVerification: true,
         async afterEmailVerification(user, request) {
@@ -53,6 +55,7 @@ export const auth = betterAuth({
   },
 
   user: {
+    
     additionalFields: {
       role: { type: "string", required: false, defaultValue: "user", input: false },
       loginStatus: { type: "boolean", required: false, defaultValue: true },
@@ -180,15 +183,18 @@ export const auth = betterAuth({
         requireEmailVerification: false,
 
         plans: [
+          
           {
-            name: "basic",
+            name: "standard",
             priceId: "price_1SKYqAD8qR70pjFErK5C207r",
-            limits: { projects: 5, storage: 10, createGoal: 5 },
+            annualDiscountPriceId: "price_1SN2xZD8qR70pjFERsxV3Lrs", // Yearly price ID
+            limits: {  createWishes: PLAN_LIMITS.standard.wishes,createHabits:PLAN_LIMITS.standard.habits },
           },
           {
             name: "pro",
             priceId: "price_1SKYsZD8qR70pjFEYXwZOCm0",
-            limits: { projects: 50, storage: 100, createGoal: 50 },
+            annualDiscountPriceId: "price_1SN2zQD8qR70pjFEtcrN3RZg", // Yearly price ID
+            // limits: { createWishes: PLAN_LIMITS.pro.wishes,createHabits:PLAN_LIMITS.pro.habits },
             freeTrial: {
               days: 7,
               onTrialStart: async (subscription) => {
