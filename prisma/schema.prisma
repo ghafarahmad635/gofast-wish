@@ -105,7 +105,9 @@ model Subscription {
 
 model Order {
   id                    String   @id @default(cuid())
-  userId                String
+  userId                String?  // make nullable
+  user                  User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
   stripeInvoiceId       String?
   stripeSubscriptionId  String?
   stripeCustomerId      String?
@@ -117,9 +119,8 @@ model Order {
   customerEmail         String?
   customerName          String?
   createdAt             DateTime @default(now())
-
-  user                  User     @relation(fields: [userId], references: [id])
 }
+
 
 
 
