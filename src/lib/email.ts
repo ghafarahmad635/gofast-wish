@@ -17,7 +17,7 @@ export async function sendEmail({ to, subject, text, react }: SendEmailOptions) 
   try {
     const { data, error } = await resend.emails.send({
      from: "GoFast Wish <onboarding@resend.dev>",
-      to: "delivered@resend.dev",
+      to: to,
       subject,
       text,
       react, // 👈 React component rendered automatically by Resend
