@@ -8,6 +8,14 @@ export const useHabitsFilters = () => {
       .withOptions({ clearOnDefault: true })
       .withDefault('daily'),
 
+    editHabit:parseAsString
+      .withDefault("") 
+      .withOptions({ clearOnDefault: true }),
+    
+    habitPage: parseAsInteger
+          .withDefault(1)
+          .withOptions({ clearOnDefault: true }),
+
     
     
 
