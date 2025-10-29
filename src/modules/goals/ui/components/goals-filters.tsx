@@ -36,7 +36,7 @@ export default function GoalsFilters() {
     return () => clearTimeout(timeout)
   }, [searchTerm])
 
-  // ✅ Sync filter dropdowns to URL
+  // ✅ Sync dropdown filters
   useEffect(() => {
     setFilters((prev) => ({
       ...prev,
@@ -67,59 +67,67 @@ export default function GoalsFilters() {
 
   return (
     <ScrollArea>
-      <div className="flex flex-wrap items-center gap-2 p-2">
-        {/* Search */}
-        <div className="relative w-full sm:w-56">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-2">
+        {/* Left: Search */}
+        <div className="relative w-full sm:max-w-sm flex-shrink-0">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
           <Input
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search goals..."
-            className="pl-8 pr-3 py-2 text-sm rounded-md border border-gray-300"
+            className="pl-8 pr-3 py-2 text-sm rounded-md border border-gray-300 bg-white"
           />
         </div>
 
-        {/* Status */}
-        <Select value={status} onValueChange={(value) => setStatus(value)}>
-          <SelectTrigger className="w-[150px] bg-white">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="completed">Completed</SelectItem>
-            <SelectItem value="incomplete">Incomplete</SelectItem>
-          </SelectContent>
-        </Select>
+        {/* Right: Dropdowns */}
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          {/* Status */}
+          <Select value={status} onValueChange={(value) => setStatus(value)}>
+            <SelectTrigger className="w-[130px] bg-white">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="completed">Completed</SelectItem>
+              <SelectItem value="incomplete">Incomplete</SelectItem>
+            </SelectContent>
+          </Select>
 
-        {/* Priority */}
-        <Select value={priority} onValueChange={(value) => setPriority(value)}>
-          <SelectTrigger className="w-[150px] bg-white">
-            <SelectValue placeholder="Priority" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="low">Low</SelectItem>
-            <SelectItem value="medium">Medium</SelectItem>
-            <SelectItem value="high">High</SelectItem>
-            <SelectItem value="urgent">Urgent</SelectItem>
-          </SelectContent>
-        </Select>
+          {/* Priority */}
+          <Select value={priority} onValueChange={(value) => setPriority(value)}>
+            <SelectTrigger className="w-[130px] bg-white">
+              <SelectValue placeholder="Priority" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="low">Low</SelectItem>
+              <SelectItem value="medium">Medium</SelectItem>
+              <SelectItem value="high">High</SelectItem>
+              <SelectItem value="urgent">Urgent</SelectItem>
+            </SelectContent>
+          </Select>
 
-        {/* Sort */}
-        <Select  value={sort} onValueChange={(value: 'asc' | 'desc') => setSort(value)}>
-          <SelectTrigger className="w-[150px] bg-white">
-            <SelectValue placeholder="Sort" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="asc">Ascending</SelectItem>
-            <SelectItem value="desc">Descending</SelectItem>
-          </SelectContent>
-        </Select>
+          {/* Sort */}
+          <Select value={sort} onValueChange={(value: 'asc' | 'desc') => setSort(value)}>
+            <SelectTrigger className="w-[130px] bg-white">
+              <SelectValue placeholder="Sort" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="asc">Ascending</SelectItem>
+              <SelectItem value="desc">Descending</SelectItem>
+            </SelectContent>
+          </Select>
 
-        {/* Clear */}
-        {isModified && (
-          <Button variant="outline" size="sm" onClick={clearFilters}>
-            <XCircleIcon className="h-4 w-4 mr-1" /> Clear
-          </Button>
-        )}
+          {/* Clear */}
+          {isModified && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={clearFilters}
+              className="flex items-center gap-1"
+            >
+              <XCircleIcon className="h-4 w-4" /> Clear
+            </Button>
+          )}
+        </div>
       </div>
       <ScrollBar orientation="horizontal" />
     </ScrollArea>
