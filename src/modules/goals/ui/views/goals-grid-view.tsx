@@ -2,7 +2,6 @@
 
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
-import { LoadingState } from "@/components/loading-state";
 import { useTRPC } from "@/trpc/client";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { DataPagination } from "../components/data-pagination";
@@ -14,18 +13,25 @@ import { useConfirm } from "@/hooks/use-confirm";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { GoalCard } from "../components/GoalCard";
+import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 
-const GoalsViews = () => {
+
+const GoalsGridViews = () => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const [filters, setFilters] = useGoalsFilters();
   const router = useRouter();
-  const { data } = useSuspenseQuery(trpc.goals.getMany.queryOptions({
-    search:filters.search,
-    page:filters.page,
-    
-  }));
+  const { data } = useSuspenseQuery(
+  trpc.goals.getMany.queryOptions({
+    search: filters.search,
+    page: filters.page,
+    status: filters.status,
+    priority: filters.priority,
+    sort: filters.sort,
+  })
+)
  
   const goalDetails = data.items.find((g) => g.id === filters.edit) ?? null;
 
@@ -84,8 +90,10 @@ const GoalsViews = () => {
   return (
     
     <>
+    
    
-    <div className="flex-1 pb-6 px-4 md:px-8">
+    <div className="flex-1 space-y-4">
+      
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         
         {data.items.map((goal) => (
@@ -127,18 +135,53 @@ const GoalsViews = () => {
   );
 };
 
-export default GoalsViews;
+export default GoalsGridViews;
 
-export const GoalsViewLoadingState = () => (
-  <LoadingState
-    title="Loading Goals"
-    description="Please wait while we fetch your goals."
-  />
-);
+export const GoalsGridViewsLoadingState = () => {
+  return (
+    <div className="animate-pulse space-y-10">
+      {/* Grid of goal cards */}
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <Card
+            key={i}
+            className="p-5 rounded-2xl border border-gray-200 bg-white shadow-sm"
+          >
+            {/* Header section */}
+            <div className="flex items-start justify-between mb-4">
+              <Skeleton className="h-5 w-3/4" />
+              <Skeleton className="h-6 w-6 rounded-md" />
+            </div>
 
-export const GoalsViewErrorState = () => (
+            {/* Description section */}
+            <div className="space-y-3">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-5/6" />
+              <Skeleton className="h-4 w-2/3" />
+            </div>
+
+            {/* Progress bar */}
+            <div className="mt-5">
+              <Skeleton className="h-2 w-full rounded-full" />
+            </div>
+          </Card>
+        ))}
+      </div>
+
+      {/* Pagination skeleton */}
+      <div className="flex justify-center mt-8 gap-2">
+        {[1, 2, 3, 4, 5].map((i) => (
+          <Skeleton key={i} className="h-8 w-8 rounded-md" />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ✅ Error State
+export const GoalsGridViewsErrorState = () => (
   <ErrorState
     title="Error Loading Goals"
     description="There was an error fetching your goals."
   />
-);
+)

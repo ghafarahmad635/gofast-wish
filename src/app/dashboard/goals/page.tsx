@@ -1,49 +1,41 @@
+// app/(dashboard)/goals/page.tsx
 import { auth } from '@/lib/auth'
-import GoalsViews, { GoalsViewErrorState, GoalsViewLoadingState } from '@/modules/goals/ui/views/goals-view';
-import { getQueryClient, trpc } from '@/trpc/server';
-import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
-import{ ErrorBoundary } from 'react-error-boundary'
-import { headers } from 'next/headers';
-import { redirect } from 'next/navigation';
-import React, { Suspense } from 'react'
-import { GoalsListHeader } from '@/modules/goals/ui/components/goals-list-header';
-import type { SearchParams } from 'nuqs/server';
-import { loadSearchParams } from '@/modules/goals/params';
-
+import { headers } from 'next/headers'
+import { redirect } from 'next/navigation'
+import { GoalsListHeader } from '@/modules/goals/ui/components/goals-list-header'
+import type { SearchParams } from 'nuqs/server'
+import GoalsSummeryCardSection from '@/modules/goals/ui/sections/goals-summery-cards-section'
+import GoalsGridSection from '@/modules/goals/ui/sections/goals-grid-section'
+import GoalsChartSection from '@/modules/goals/ui/sections/goals-chart-section'
+import { loadGoalsFilterParams } from '@/modules/goals/params'
 
 interface Props {
-  searchParams: Promise<SearchParams>;
-};
-const Goals = async({ searchParams }: Props) => {
-  const filter = await loadSearchParams(searchParams);
+  searchParams: Promise<SearchParams>
+}
+
+const Goals = async ({ searchParams }: Props) => {
+  const filter = await loadGoalsFilterParams(searchParams)
   const session = await auth.api.getSession({
     headers: await headers(),
-  });
-   if (!session) {
-    redirect("/sign-in");
-  }
-  const queryClient=getQueryClient();
-  void queryClient.prefetchQuery(trpc.goals.getMany.queryOptions({
-    search:filter.search,
-    page:filter.page,
-    
-  }))
+  })
+  if (!session) redirect("/sign-in")
+
   return (
     <>
-    <GoalsListHeader />
-    <HydrationBoundary state={dehydrate(queryClient)}>
-      <Suspense fallback={<GoalsViewLoadingState />}>
-      <ErrorBoundary fallback={<GoalsViewErrorState />}>
-        <GoalsViews />
-      </ErrorBoundary>
-        
-      </Suspense>
-      
-  
-    </HydrationBoundary>
+      <GoalsListHeader />
+      <div className="flex-1 pb-6 px-4 md:px-8 space-y-10">
+        <GoalsSummeryCardSection />
+        <GoalsGridSection
+          search={filter.search}
+          page={filter.page}
+          status={filter.status}
+          priority={filter.priority}
+           sort={filter.sort} // ✅ normalize
+        />
+        <GoalsChartSection />
+      </div>
     </>
   )
-    
 }
 
 export default Goals

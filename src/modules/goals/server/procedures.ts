@@ -13,17 +13,40 @@ export const goalsRouter = createTRPCRouter({
   .input(
     z.object({
       page: z.number().default(DEFAULT_PAGE),
-      pageSize: z.number().min(MIN_PAGE_SIZE).max(MAX_PAGE_SIZE).default(DEFAULT_PAGE_SIZE),
+      pageSize: z
+        .number()
+        .min(MIN_PAGE_SIZE)
+        .max(MAX_PAGE_SIZE)
+        .default(DEFAULT_PAGE_SIZE),
       search: z.string().nullish(),
+      status: z.string().nullish(),
+      priority: z.string().nullish(), // ✅ just a string
+      sort: z.enum(["asc", "desc"]).default("desc"),
     })
   )
   .query(async ({ ctx, input }) => {
-    const { page, pageSize } = input;
-    const search = input?.search?.trim() || "";
+    const { page, pageSize, search, status, priority, sort } = input
 
-    // ✅ Shared filter conditions
+    // ✅ Priority map (UI → DB)
+    const priorityMap: Record<string, number> = {
+      low: 1,
+      medium: 2,
+      high: 3,
+      urgent: 4,
+    }
+
     const where: Prisma.GoalWhereInput = {
       userId: ctx.auth.user.id,
+
+      ...(status && {
+        isCompleted:
+          status === "completed" ? true : status === "incomplete" ? false : undefined,
+      }),
+
+      ...(priority && priorityMap[priority]
+        ? { priority: priorityMap[priority] }
+        : {}),
+
       ...(search && {
         OR: [
           { title: { contains: search, mode: "insensitive" } },
@@ -31,36 +54,42 @@ export const goalsRouter = createTRPCRouter({
           { category: { contains: search, mode: "insensitive" } },
         ],
       }),
-    };
+    }
 
-    // ✅ Total count for pagination
-    const total = await db.goal.count({ where });
-    const totalPages = Math.ceil(total / pageSize);
+    const total = await db.goal.count({ where })
+    const totalPages = Math.ceil(total / pageSize)
 
-    // ✅ Paginated data query
-    const data = await db.goal.findMany({
+    const items = await db.goal.findMany({
       where,
-      include: {
-        featuredImage: {
-          select: { url: true },
-        },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
+      include: { featuredImage: { select: { url: true } } },
+      orderBy: { createdAt: sort },
       skip: (page - 1) * pageSize,
       take: pageSize,
-    });
+    })
 
-    // ✅ Unified return format
-    return {
-      items: data,
-      total,
-      totalPages,
-      currentPage: page,
-      pageSize,
-    };
+    return { items, total, totalPages, currentPage: page, pageSize }
   }),
+
+
+
+  getAll: protectedProcedure.query(async ({ ctx }) => {
+    try {
+      // ✅ Fetch all goals for the current user
+      const goals = await db.goal.findMany({
+        where: { userId: ctx.auth.user.id },
+        
+      })
+
+      return goals
+    } catch (error) {
+      console.error("❌ getAll goals failed:", error)
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Failed to fetch all goals.",
+      })
+    }
+  }),
+
 
   create: protectedProcedure
     .input(goalInsertSchema)

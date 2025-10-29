@@ -1,20 +1,23 @@
-import { parseAsInteger, parseAsString, useQueryStates } from "nuqs";
-import { DEFAULT_PAGE } from "@/constants";
 
-export const useGoalsFilters = () => {
-  return useQueryStates({
-    search: parseAsString
-      .withDefault("")
-      .withOptions({ clearOnDefault: true }),
 
-    page: parseAsInteger
-      .withDefault(DEFAULT_PAGE)
-      .withOptions({ clearOnDefault: true }),
-    
+import {
+  parseAsString,
+  parseAsInteger,
+  parseAsStringLiteral,
+  useQueryStates,
+} from 'nuqs'
+import { DEFAULT_PAGE } from '@/constants'
 
-    // ✅ Safe fallback for older nuqs
-    edit: parseAsString
-      .withDefault("") // empty string means “no edit modal open”
-      .withOptions({ clearOnDefault: true }),
-  });
-};
+const sortValues = ['asc', 'desc'] as const
+
+const params = {
+  search: parseAsString.withOptions({ clearOnDefault: true }).withDefault(""),
+  status: parseAsString.withOptions({ clearOnDefault: true }).withDefault(""),
+  priority: parseAsString.withOptions({ clearOnDefault: true }).withDefault(""), // "low" | "medium" | ...
+  sort: parseAsStringLiteral(["asc","desc"]).withOptions({ clearOnDefault: true }).withDefault("desc"),
+  page: parseAsInteger.withOptions({ clearOnDefault: true }).withDefault(DEFAULT_PAGE),
+  edit: parseAsString.withOptions({ clearOnDefault: true }).withDefault(""),
+}
+
+
+export const useGoalsFilters = () => useQueryStates(params)
