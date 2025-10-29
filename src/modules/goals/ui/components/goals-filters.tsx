@@ -81,7 +81,7 @@ export default function GoalsFilters() {
 
         {/* Status */}
         <Select value={status} onValueChange={(value) => setStatus(value)}>
-          <SelectTrigger className="w-[150px]">
+          <SelectTrigger className="w-[150px] bg-white">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
@@ -92,7 +92,7 @@ export default function GoalsFilters() {
 
         {/* Priority */}
         <Select value={priority} onValueChange={(value) => setPriority(value)}>
-          <SelectTrigger className="w-[150px]">
+          <SelectTrigger className="w-[150px] bg-white">
             <SelectValue placeholder="Priority" />
           </SelectTrigger>
           <SelectContent>
@@ -104,8 +104,8 @@ export default function GoalsFilters() {
         </Select>
 
         {/* Sort */}
-        <Select value={sort} onValueChange={(value: 'asc' | 'desc') => setSort(value)}>
-          <SelectTrigger className="w-[150px]">
+        <Select  value={sort} onValueChange={(value: 'asc' | 'desc') => setSort(value)}>
+          <SelectTrigger className="w-[150px] bg-white">
             <SelectValue placeholder="Sort" />
           </SelectTrigger>
           <SelectContent>
