@@ -17,48 +17,42 @@ export const HabitsListHeader = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [filters, setFilters] = useHabitsFilters()
 
+  // ✅ Handle frequency change — reset habitPage to 1
+  const handleFrequencyChange = (newFrequency: "daily" | "weekly" | "monthly") => {
+    setFilters({
+      frequency: newFrequency,
+      habitPage: 1, // reset pagination to first page
+    })
+  }
+
   return (
     <>
       <NewGoalDialog open={isDialogOpen} onOpenChange={setIsDialogOpen} />
 
       <div className="py-4 px-4 md:px-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        {/* Left side */}
-        <div className="flex items-center justify-between w-full md:w-auto">
-          <h5 className="font-medium text-xl">My Habits</h5>
+        {/* Left side - Heading */}
+        <h5 className="font-medium text-xl">My Habits</h5>
+
+        {/* Right side - Button Group */}
+        <ButtonGroup>
+          {filterButtons.map((btn) => (
+            <Button
+              key={btn.value}
+              variant={filters.frequency === btn.value ? "default" : "outline"}
+              onClick={() => handleFrequencyChange(btn.value)}
+            >
+              {btn.label}
+            </Button>
+          ))}
+
           <Button
             onClick={() => setIsDialogOpen(true)}
-            className="md:hidden flex items-center gap-2"
+            className="flex items-center gap-2 bg-secondary"
           >
             <PlusIcon className="w-4 h-4" />
-            New Habit
+            New
           </Button>
-        </div>
-
-        {/* Center – Filter buttons */}
-        <div className="flex justify-center">
-          <ButtonGroup>
-            {filterButtons.map((btn) => (
-              <Button
-                key={btn.value}
-                variant={filters.frequency === btn.value ? "default" : "outline"}
-                onClick={() => setFilters({ frequency: btn.value })}
-              >
-                {btn.label}
-              </Button>
-            ))}
-          </ButtonGroup>
-        </div>
-
-        {/* Right side */}
-        <div className="hidden md:flex">
-          <Button
-            onClick={() => setIsDialogOpen(true)}
-            className="flex items-center gap-2"
-          >
-            <PlusIcon className="w-4 h-4" />
-            New Habit
-          </Button>
-        </div>
+        </ButtonGroup>
       </div>
     </>
   )

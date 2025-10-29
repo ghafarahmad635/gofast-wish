@@ -40,10 +40,13 @@ type Habit = {
 
 type Props = {
   habit: Habit
-  mode: 'daily' | 'weekly' | 'monthly'
+  mode: 'daily' | 'weekly' | 'monthly',
+  onEdit?: (id: string) => void;
+  onDelete?: (id: string) => void;
+
 }
 
-export default function HabitCard({ habit, mode }: Props) {
+export default function HabitCard({ habit, mode,onEdit,onDelete }: Props) {
   const trpc = useTRPC()
   const queryClient = useQueryClient()
   const [justCompleted, setJustCompleted] = useState(false)
@@ -63,7 +66,11 @@ export default function HabitCard({ habit, mode }: Props) {
       onSettled: () => setActive(false),
       onSuccess: async () => {
         setJustCompleted(true)
-        await queryClient.invalidateQueries(trpc.habitsTracker.getMany.queryOptions())
+        await queryClient.invalidateQueries(trpc.habitsTracker.getMany.queryOptions({}))
+        await queryClient.invalidateQueries(trpc.habitsTracker.getManyByFrequency.queryOptions({}))
+        await queryClient.invalidateQueries(trpc.habitsTracker.getCompletions.queryOptions({
+          habitId:habit.id
+        }))
         toast.success('Marked as completed!')
         setTimeout(() => setJustCompleted(false), 900)
       },
@@ -216,12 +223,12 @@ export default function HabitCard({ habit, mode }: Props) {
                 {mode}
               </Badge>
               <div className="flex gap-1 opacity-80 hover:opacity-100 transition">
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => toast('Edit coming soon')}>
+                {onEdit && <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(habit.id)}>
                   <Edit className="h-4 w-4 text-blue-500" />
-                </Button>
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => toast('Delete coming soon')}>
+                </Button>}
+                {onDelete && <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onDelete(habit.id)}>
                   <Trash2 className="h-4 w-4 text-red-500" />
-                </Button>
+                </Button>}
               </div>
             </div>
           </CardHeader>

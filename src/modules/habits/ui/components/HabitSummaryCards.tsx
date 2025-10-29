@@ -9,7 +9,8 @@ import { useEffect, useState } from 'react'
 type Props = {
   total: number
   completed: number
-  completionRate: number
+  completionRate: number,
+ 
 }
 
 export default function HabitSummaryCards({ total, completed, completionRate }: Props) {

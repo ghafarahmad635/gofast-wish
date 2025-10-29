@@ -1,8 +1,8 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
-
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTRPC } from "@/trpc/client";
 import {
@@ -16,76 +16,128 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { habitCreateSchema, HabitCreateSchema } from "../../schmas";
 import { DatePickerField } from "./date-picker-field";
 import { toast } from "sonner";
+import { HabitGetOne } from "../../types";
 
 interface HabitFormProps {
   onSuccess?: () => void;
   onCancel?: () => void;
-  // initialValues?: HabitGetOne; // you can add later for edit mode
+  initialValues?: HabitGetOne;
 }
 
-const HabitForm = ({ onSuccess, onCancel }: HabitFormProps) => {
+const HabitForm = ({ onSuccess, onCancel, initialValues }: HabitFormProps) => {
   const trpc = useTRPC();
- const queryClient = useQueryClient();
-  // form setup
+  const queryClient = useQueryClient();
+
+  // ✅ setup form with strong default values
   const form = useForm<HabitCreateSchema>({
     resolver: zodResolver(habitCreateSchema),
     defaultValues: {
-      title: "",
-      description: "",
-      frequency: "daily",
-      startDate: new Date().toISOString().split("T")[0],
+      title: initialValues?.title || "",
+      description: initialValues?.description || "",
+      frequency:
+        (initialValues?.frequency as "daily" | "weekly" | "monthly") || "daily",
+      startDate: initialValues?.startDate
+        ? new Date(initialValues.startDate).toISOString().split("T")[0]
+        : new Date().toISOString().split("T")[0],
     },
   });
 
- const createHabit = useMutation(
+  // ✅ re-fill when editing different habit
+  useEffect(() => {
+    if (initialValues) {
+      form.reset({
+        title: initialValues.title || "",
+        description: initialValues.description || "",
+        frequency:
+          (initialValues.frequency as "daily" | "weekly" | "monthly") ||
+          "daily",
+        startDate: initialValues.startDate
+          ? new Date(initialValues.startDate).toISOString().split("T")[0]
+          : new Date().toISOString().split("T")[0],
+      });
+    }
+  }, [initialValues, form]);
+
+  // ✅ create mutation
+  const createHabit = useMutation(
     trpc.habitsTracker.create.mutationOptions({
       onSuccess: async (data) => {
-        await queryClient.invalidateQueries(trpc.habitsTracker.getMany.queryOptions())
+        await queryClient.invalidateQueries(
+          trpc.habitsTracker.getMany.queryOptions({})
+        );
+        await queryClient.invalidateQueries(
+          trpc.habitsTracker.getManyByFrequency.queryOptions({})
+        );
+        
         form.reset();
         onSuccess?.();
-
-        // Data will contain { success, message, habit }
         toast.success(data?.message || "Habit created successfully!", {
           description: "Your new habit has been added to your tracker.",
         });
       },
-
       onError: (err) => {
-        console.error("Error creating habit:", err);
-
-        // Safely check if backend included a message
-        const message =
-          err.message ||
-          "Unable to create habit. Please try again or contact support.";
-
-        // Show toast message
         toast.error("Error creating habit", {
-          description: message,
+          description:
+            err.message ||
+            "Unable to create habit. Please try again or contact support.",
         });
       },
     })
   );
 
+  // ✅ update mutation
+  const updateHabit = useMutation(
+    trpc.habitsTracker.update.mutationOptions({
+      onSuccess: async (data) => {
+        await queryClient.invalidateQueries(
+          trpc.habitsTracker.getMany.queryOptions({})
+        );
+         await queryClient.invalidateQueries(
+          trpc.habitsTracker.getManyByFrequency.queryOptions({})
+        );
+        if (initialValues?.id) {
+          await queryClient.invalidateQueries(
+            trpc.habitsTracker.getCompletions.queryOptions({
+              habitId: initialValues.id,
+            })
+          );
+        }
+        onSuccess?.();
+        toast.success(data.message || "Habit updated successfully!");
+      },
+      onError: (err) => {
+        toast.error("Error updating habit", {
+          description: err.message || "Please try again later.",
+        });
+      },
+    })
+  );
 
+  const isPending = createHabit.isPending || updateHabit.isPending;
 
-  const isPending = createHabit.isPending;
-
-  // handle submit
+  // ✅ handle submit
   const onSubmit = (values: HabitCreateSchema) => {
-    createHabit.mutate(values);
+    if (initialValues?.id) {
+      updateHabit.mutate({ id: initialValues.id, ...values });
+    } else {
+      createHabit.mutate(values);
+    }
   };
 
-  // UI
+  // ✅ UI
   return (
     <Form {...form}>
-      <form
-        className="space-y-6 "
-        onSubmit={form.handleSubmit(onSubmit)}
-      >
+      <form className="space-y-6" onSubmit={form.handleSubmit(onSubmit)}>
         {/* Title */}
         <FormField
           name="title"
@@ -130,14 +182,17 @@ const HabitForm = ({ onSuccess, onCancel }: HabitFormProps) => {
               <FormLabel>Frequency</FormLabel>
               <FormControl>
                 <Select
-                
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
+                  onValueChange={(val) =>
+                    field.onChange(
+                      val as "daily" | "weekly" | "monthly" | undefined
+                    )
+                  }
+                  value={field.value}
                 >
                   <SelectTrigger className="bg-white w-full">
                     <SelectValue placeholder="Select frequency" />
                   </SelectTrigger>
-                  <SelectContent className="w-full ">
+                  <SelectContent className="w-full">
                     <SelectItem value="daily">Daily</SelectItem>
                     <SelectItem value="weekly">Weekly</SelectItem>
                     <SelectItem value="monthly">Monthly</SelectItem>
@@ -178,7 +233,11 @@ const HabitForm = ({ onSuccess, onCancel }: HabitFormProps) => {
             Cancel
           </Button>
           <Button type="submit" disabled={isPending}>
-            {isPending ? "Saving..." : "Save Habit"}
+            {isPending
+              ? "Saving..."
+              : initialValues
+              ? "Update Habit"
+              : "Save Habit"}
           </Button>
         </div>
       </form>
