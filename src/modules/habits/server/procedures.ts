@@ -106,6 +106,45 @@ export const habitsRouter = createTRPCRouter({
       }
     }),
 
+    getManyLatestByFrequency: protectedProcedure
+    .input(
+      z.object({
+        frequency: z.enum(["daily", "weekly", "monthly"]).default("daily"),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const MAX_HABITS_CAROUSEL_ITEMS = 10
+      try {
+        const { frequency } = input
+
+        const where: Prisma.HabitWhereInput = {
+          userId: ctx.auth.user.id,
+          frequency,
+        }
+
+        // ✅ Only fetch limited number of habits for carousel
+        const data = await db.habit.findMany({
+          where,
+          include: { completions: true },
+          orderBy: { createdAt: "desc" },
+          take: MAX_HABITS_CAROUSEL_ITEMS,
+        })
+
+        return {
+          items: data,
+          count: data.length,
+          maxItems: MAX_HABITS_CAROUSEL_ITEMS,
+        }
+      } catch (error) {
+        console.error("❌ getLatestByFrequency failed:", error)
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to fetch latest habits for carousel.",
+        })
+      }
+    }),
+
+
 
   // ✅ Get a single habit by ID
 getOne: protectedProcedure

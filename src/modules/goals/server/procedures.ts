@@ -329,6 +329,47 @@ export const goalsRouter = createTRPCRouter({
     };
   }),
 
+  getManyLatestForCarousel: protectedProcedure
+  .input(
+    z.object({
+      status: z.enum(["completed", "incomplete"]).default("incomplete"),
+    })
+  )
+  .query(async ({ ctx, input }) => {
+    const { status } = input;
+    const MAX_CAROUSEL_ITEMS = 10; 
+
+    // ✅ Filter for latest goals
+    const where: Prisma.GoalWhereInput = {
+      userId: ctx.auth.user.id,
+      isCompleted: status === "completed",
+    };
+
+    // ✅ Fetch latest N goals
+    const items = await db.goal.findMany({
+      where,
+      include: {
+        featuredImage: {
+          select: { url: true },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      take: MAX_CAROUSEL_ITEMS,
+    });
+
+    // ✅ Return unified structure
+    return {
+      items,
+      status,
+      count: items.length,
+      maxItems: MAX_CAROUSEL_ITEMS,
+    };
+  }),
+
+  
+
 
 
 

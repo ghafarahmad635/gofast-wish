@@ -79,6 +79,9 @@ const HabitForm = ({ onSuccess, onCancel, initialValues }: HabitFormProps) => {
           trpc.habitsTracker.getManyByFrequency.queryOptions({})
         );
         
+        
+        await queryClient.invalidateQueries(trpc.habitsTracker.getManyLatestByFrequency.queryOptions({}))
+        
         form.reset();
         onSuccess?.();
         toast.success(data?.message || "Habit created successfully!", {
@@ -105,6 +108,7 @@ const HabitForm = ({ onSuccess, onCancel, initialValues }: HabitFormProps) => {
          await queryClient.invalidateQueries(
           trpc.habitsTracker.getManyByFrequency.queryOptions({})
         );
+        await queryClient.invalidateQueries(trpc.habitsTracker.getManyLatestByFrequency.queryOptions({}))
         if (initialValues?.id) {
           await queryClient.invalidateQueries(
             trpc.habitsTracker.getCompletions.queryOptions({

@@ -1,4 +1,3 @@
-// HabitCard.tsx
 'use client'
 
 import { useMemo, useState } from 'react'
@@ -6,8 +5,21 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip'
-import { CheckCircle, Info, Flame, TrendingUp, CalendarDays, Edit, Trash2 } from 'lucide-react'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  TooltipProvider,
+} from '@/components/ui/tooltip'
+import {
+  CheckCircle,
+  Flame,
+  TrendingUp,
+  CalendarDays,
+  Edit,
+  Trash2,
+  Info,
+} from 'lucide-react'
 import { toast } from 'sonner'
 import { motion } from 'framer-motion'
 import { useTRPC } from '@/trpc/client'
@@ -33,23 +45,21 @@ type Habit = {
   id: string
   title: string
   description?: string | null
-  frequency: string // "daily" | "weekly" | "monthly"
+  frequency: string
   startDate: string | Date
   completions: Completion[]
 }
 
 type Props = {
   habit: Habit
-  mode: 'daily' | 'weekly' | 'monthly',
-  onEdit?: (id: string) => void;
-  onDelete?: (id: string) => void;
-
+  mode: 'daily' | 'weekly' | 'monthly'
+  onEdit?: (id: string) => void
+  onDelete?: (id: string) => void
 }
 
-export default function HabitCard({ habit, mode,onEdit,onDelete }: Props) {
+export default function HabitCard({ habit, mode, onEdit, onDelete }: Props) {
   const trpc = useTRPC()
   const queryClient = useQueryClient()
-  const [justCompleted, setJustCompleted] = useState(false)
   const [active, setActive] = useState(false)
 
   const title = habit.title
@@ -65,29 +75,28 @@ export default function HabitCard({ habit, mode,onEdit,onDelete }: Props) {
       onMutate: () => setActive(true),
       onSettled: () => setActive(false),
       onSuccess: async () => {
-        setJustCompleted(true)
         await queryClient.invalidateQueries(trpc.habitsTracker.getMany.queryOptions({}))
         await queryClient.invalidateQueries(trpc.habitsTracker.getManyByFrequency.queryOptions({}))
-        await queryClient.invalidateQueries(trpc.habitsTracker.getCompletions.queryOptions({
-          habitId:habit.id
-        }))
+        await queryClient.invalidateQueries(
+          trpc.habitsTracker.getCompletions.queryOptions({ habitId: habit.id })
+        )
         toast.success('Marked as completed!')
-        setTimeout(() => setJustCompleted(false), 900)
       },
       onError: (err) => toast.error(`Update failed: ${err.message || 'Try again.'}`),
     })
   )
 
-  const onMark = () => {
-    markDone.mutate({ habitId: habit.id, date: new Date() })
-  }
+  const onMark = () => markDone.mutate({ habitId: habit.id, date: new Date() })
 
   const today = startOfDay(new Date())
   const weekRange = (d: Date) => ({
     start: startOfWeek(d, { weekStartsOn: 1 }),
     end: endOfWeek(d, { weekStartsOn: 1 }),
   })
-  const monthRange = (d: Date) => ({ start: startOfMonth(d), end: endOfMonth(d) })
+  const monthRange = (d: Date) => ({
+    start: startOfMonth(d),
+    end: endOfMonth(d),
+  })
 
   const buckets = useMemo(() => {
     if (mode === 'daily') {
@@ -95,14 +104,18 @@ export default function HabitCard({ habit, mode,onEdit,onDelete }: Props) {
       return days.map((d) => ({
         label: format(d, 'EEE').charAt(0),
         tooltip: format(d, 'MMM d'),
-        done: normalizedCompletions.some((c) => isSameDay(c.date, d) && c.status === 'completed'),
+        done: normalizedCompletions.some(
+          (c) => isSameDay(c.date, d) && c.status === 'completed'
+        ),
       }))
     }
     if (mode === 'weekly') {
       const endWeeks = Array.from({ length: 4 }, (_, i) => subWeeks(today, 3 - i))
       return endWeeks.map((d) => {
         const r = weekRange(d)
-        const done = normalizedCompletions.some((c) => isWithinInterval(c.date, r) && c.status === 'completed')
+        const done = normalizedCompletions.some(
+          (c) => isWithinInterval(c.date, r) && c.status === 'completed'
+        )
         return {
           label: `W${format(r.start, 'w')}`,
           tooltip: `${format(r.start, 'MMM d')} – ${format(r.end, 'MMM d')}`,
@@ -113,7 +126,9 @@ export default function HabitCard({ habit, mode,onEdit,onDelete }: Props) {
     const endMonths = Array.from({ length: 6 }, (_, i) => subMonths(today, 5 - i))
     return endMonths.map((d) => {
       const r = monthRange(d)
-      const done = normalizedCompletions.some((c) => isWithinInterval(c.date, r) && c.status === 'completed')
+      const done = normalizedCompletions.some(
+        (c) => isWithinInterval(c.date, r) && c.status === 'completed'
+      )
       return {
         label: format(r.start, 'MMM'),
         tooltip: format(r.start, 'MMMM yyyy'),
@@ -124,14 +139,20 @@ export default function HabitCard({ habit, mode,onEdit,onDelete }: Props) {
 
   const completedThisPeriod = useMemo(() => {
     if (mode === 'daily') {
-      return normalizedCompletions.some((c) => isSameDay(c.date, today) && c.status === 'completed')
+      return normalizedCompletions.some(
+        (c) => isSameDay(c.date, today) && c.status === 'completed'
+      )
     }
     if (mode === 'weekly') {
       const r = weekRange(today)
-      return normalizedCompletions.some((c) => isWithinInterval(c.date, r) && c.status === 'completed')
+      return normalizedCompletions.some(
+        (c) => isWithinInterval(c.date, r) && c.status === 'completed'
+      )
     }
     const r = monthRange(today)
-    return normalizedCompletions.some((c) => isWithinInterval(c.date, r) && c.status === 'completed')
+    return normalizedCompletions.some(
+      (c) => isWithinInterval(c.date, r) && c.status === 'completed'
+    )
   }, [mode, normalizedCompletions, today])
 
   const { currentStreak, longestStreak } = useMemo(() => {
@@ -139,7 +160,9 @@ export default function HabitCard({ habit, mode,onEdit,onDelete }: Props) {
       let current = 0
       let longest = 0
       const keys = new Set(
-        normalizedCompletions.filter((c) => c.status === 'completed').map((c) => format(c.date, 'yyyy-MM-dd'))
+        normalizedCompletions
+          .filter((c) => c.status === 'completed')
+          .map((c) => format(c.date, 'yyyy-MM-dd'))
       )
       let cursor = today
       while (keys.has(format(cursor, 'yyyy-MM-dd'))) {
@@ -156,50 +179,7 @@ export default function HabitCard({ habit, mode,onEdit,onDelete }: Props) {
       }
       return { currentStreak: current, longestStreak: longest }
     }
-
-    if (mode === 'weekly') {
-      const weekKey = (d: Date) => `${format(startOfWeek(d, { weekStartsOn: 1 }), 'yyyy-MM-dd')}`
-      const weeks = new Set(
-        normalizedCompletions.filter((c) => c.status === 'completed').map((c) => weekKey(c.date as Date))
-      )
-      let current = 0
-      let longest = 0
-      let cursorStart = startOfWeek(today, { weekStartsOn: 1 })
-      while (weeks.has(format(cursorStart, 'yyyy-MM-dd'))) {
-        current += 1
-        cursorStart = addDays(cursorStart, -7)
-      }
-      const all = Array.from(weeks).map((k) => new Date(k + 'T00:00:00'))
-      all.sort((a, b) => a.getTime() - b.getTime())
-      let run = 0
-      for (let i = 0; i < all.length; i++) {
-        if (i > 0 && differenceInCalendarWeeks(all[i], all[i - 1], { weekStartsOn: 1 }) === 1) run++
-        else run = 1
-        if (run > longest) longest = run
-      }
-      return { currentStreak: current, longestStreak: longest }
-    }
-
-    const monthKey = (d: Date) => format(startOfMonth(d), 'yyyy-MM')
-    const months = new Set(
-      normalizedCompletions.filter((c) => c.status === 'completed').map((c) => monthKey(c.date as Date))
-    )
-    let current = 0
-    let longest = 0
-    let cursorStart = startOfMonth(today)
-    while (months.has(format(cursorStart, 'yyyy-MM'))) {
-      current += 1
-      cursorStart = subMonths(cursorStart, 1)
-    }
-    const all = Array.from(months).map((k) => new Date(k + '-01T00:00:00'))
-    all.sort((a, b) => a.getTime() - b.getTime())
-    let run = 0
-    for (let i = 0; i < all.length; i++) {
-      if (i > 0 && differenceInCalendarMonths(all[i], all[i - 1]) === 1) run++
-      else run = 1
-      if (run > longest) longest = run
-    }
-    return { currentStreak: current, longestStreak: longest }
+    return { currentStreak: 0, longestStreak: 0 }
   }, [mode, normalizedCompletions, today])
 
   const progress = useMemo(() => {
@@ -212,67 +192,79 @@ export default function HabitCard({ habit, mode,onEdit,onDelete }: Props) {
 
   return (
     <TooltipProvider>
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="h-full">
-        <Card className="relative hover:shadow-xl hover:border-primary/40 transition-all duration-300 rounded-2xl bg-white/95 backdrop-blur-sm h-full">
-          <CardHeader className="flex justify-between items-center pb-2">
-            <CardTitle className="text-base md:text-lg font-semibold text-gray-900">
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="h-full w-full overflow-hidden max-w-full"
+      >
+        <Card className="relative h-full w-full max-w-full min-w-0 overflow-hidden hover:shadow-xl transition-all duration-300 rounded-2xl bg-white">
+          {/* Header */}
+          <CardHeader className="flex justify-between items-center pb-2 min-w-0 flex-wrap gap-2">
+            <CardTitle className="text-base md:text-lg font-semibold text-gray-900 truncate">
               {title}
             </CardTitle>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-shrink-0">
               <Badge className="text-xxs md:text-xs font-semibold bg-gray-900 text-white capitalize">
                 {mode}
               </Badge>
-              <div className="flex gap-1 opacity-80 hover:opacity-100 transition">
-                {onEdit && <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(habit.id)}>
-                  <Edit className="h-4 w-4 text-blue-500" />
-                </Button>}
-                {onDelete && <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onDelete(habit.id)}>
-                  <Trash2 className="h-4 w-4 text-red-500" />
-                </Button>}
+              <div className="flex gap-1">
+                {onEdit && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={() => onEdit(habit.id)}
+                  >
+                    <Edit className="h-4 w-4 text-blue-500" />
+                  </Button>
+                )}
+                {onDelete && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={() => onDelete(habit.id)}
+                  >
+                    <Trash2 className="h-4 w-4 text-red-500" />
+                  </Button>
+                )}
               </div>
             </div>
           </CardHeader>
 
-          <CardContent className="space-y-4">
-            <p className="text-sm text-gray-600 line-clamp-2 min-h-[2lh]">{desc || '—'}</p>
+          {/* Body */}
+          <CardContent className="space-y-4 overflow-hidden break-words max-w-full">
+            <p className="text-sm text-gray-600 line-clamp-2">{desc || '—'}</p>
 
-            <div>
-              <Progress value={progress} className="h-2 rounded-full" />
-              <div className="flex justify-between mt-1 text-xs text-gray-500">
-                <span>
-                  {mode === 'daily' && '7-Day Progress'}
-                  {mode === 'weekly' && '4-Week Progress'}
-                  {mode === 'monthly' && '6-Month Progress'}
-                </span>
-                <span>{progress}% complete</span>
-              </div>
+            <Progress value={progress} className="h-2 rounded-full" />
+            <div className="flex justify-between mt-1 text-xs text-gray-500 min-w-0 flex-wrap gap-2">
+              <span>
+                {mode === 'daily'
+                  ? '7-Day Progress'
+                  : mode === 'weekly'
+                  ? '4-Week Progress'
+                  : '6-Month Progress'}
+              </span>
+              <span>{progress}% complete</span>
             </div>
 
-            <div className="flex justify-between text-xs text-gray-500">
+            <div className="flex justify-between text-xs text-gray-500 flex-wrap gap-2 min-w-0">
               <div className="flex items-center gap-1">
                 <CalendarDays className="h-3.5 w-3.5 text-blue-500" />
-                <span>Started: {format(start, 'MMM d, yyyy')}</span>
+                <span className="truncate">
+                  Started: {format(start, 'MMM d, yyyy')}
+                </span>
               </div>
-
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="flex items-center gap-1 cursor-help">
-                    <Info className="w-3 h-3 text-gray-400" />
-                    <span>{habit.completions?.length || 0} total entries</span>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>
-                    Last done:{' '}
-                    {habit.completions?.length
-                      ? format(new Date(habit.completions[habit.completions.length - 1].date), 'MMM d, yyyy')
-                      : '—'}
-                  </p>
-                </TooltipContent>
-              </Tooltip>
+              <div className="flex items-center gap-1">
+                <Info className="w-3 h-3 text-gray-400" />
+                <span className="truncate">
+                  {habit.completions?.length || 0} total entries
+                </span>
+              </div>
             </div>
 
-            <div className="flex justify-between gap-1 pt-2">
+            {/* ✅ Fixed Section (No Overflow) */}
+            <div className="flex flex-wrap justify-between gap-2 pt-2 w-full overflow-hidden">
               {buckets.map((b, i) => (
                 <Tooltip key={i}>
                   <TooltipTrigger asChild>
@@ -280,7 +272,6 @@ export default function HabitCard({ habit, mode,onEdit,onDelete }: Props) {
                       className={`w-7 h-7 md:w-8 md:h-8 rounded-md flex items-center justify-center text-[10px] md:text-[11px] font-medium ${
                         b.done ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-600'
                       }`}
-                      title={b.tooltip}
                     >
                       {b.label}
                     </div>
@@ -294,37 +285,27 @@ export default function HabitCard({ habit, mode,onEdit,onDelete }: Props) {
               ))}
             </div>
 
-            <div className="flex justify-between items-center pt-1">
-              <div className="flex gap-3 items-center text-sm text-gray-700">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="flex items-center gap-1">
-                      <Flame className="h-4 w-4 text-orange-500" />
-                      <span>
-                        Current:{' '}
-                        <span className="font-semibold text-gray-900">{streakLabel(currentStreak)}</span>
-                      </span>
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Resets if you miss a {mode.slice(0, -2)} period.</p>
-                  </TooltipContent>
-                </Tooltip>
-
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="flex items-center gap-1">
-                      <TrendingUp className="h-4 w-4 text-blue-500" />
-                      <span>
-                        Longest:{' '}
-                        <span className="font-semibold text-gray-900">{streakLabel(longestStreak)}</span>
-                      </span>
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Your all-time best consecutive {mode} streak.</p>
-                  </TooltipContent>
-                </Tooltip>
+            {/* Footer */}
+            <div className="flex justify-between items-center pt-1 min-w-0 flex-wrap gap-2">
+              <div className="flex gap-3 items-center text-sm text-gray-700 flex-wrap">
+                <div className="flex items-center gap-1">
+                  <Flame className="h-4 w-4 text-orange-500" />
+                  <span>
+                    Current:{' '}
+                    <span className="font-semibold text-gray-900">
+                      {streakLabel(currentStreak)}
+                    </span>
+                  </span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <TrendingUp className="h-4 w-4 text-blue-500" />
+                  <span>
+                    Longest:{' '}
+                    <span className="font-semibold text-gray-900">
+                      {streakLabel(longestStreak)}
+                    </span>
+                  </span>
+                </div>
               </div>
 
               <Button
@@ -332,11 +313,17 @@ export default function HabitCard({ habit, mode,onEdit,onDelete }: Props) {
                 onClick={onMark}
                 disabled={active || completedThisPeriod}
                 className={`text-xs font-semibold px-3 py-1 rounded-full ${
-                  completedThisPeriod ? 'bg-green-600 hover:bg-green-600/90 text-white' : ''
+                  completedThisPeriod
+                    ? 'bg-green-600 hover:bg-green-600/90 text-white'
+                    : ''
                 }`}
               >
                 <CheckCircle className="mr-1 h-4 w-4" />
-                {completedThisPeriod ? 'Completed ✅' : active ? 'Updating…' : 'Mark Done'}
+                {completedThisPeriod
+                  ? 'Completed ✅'
+                  : active
+                  ? 'Updating…'
+                  : 'Mark Done'}
               </Button>
             </div>
           </CardContent>

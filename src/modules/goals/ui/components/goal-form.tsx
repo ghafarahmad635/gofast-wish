@@ -64,6 +64,8 @@ const GoalForm = ({ onSuccess, onCancel, initialValues }: GoalFormProps) => {
       onSuccess: async () => {
         await queryClient.invalidateQueries(trpc.goals.getMany.queryOptions({}));
         await queryClient.invalidateQueries(trpc.goals.getManyByStatus.queryOptions({}));
+        await queryClient.invalidateQueries(trpc.goals.getManyLatestForCarousel.queryOptions({}))
+        await queryClient.invalidateQueries(trpc.goals.getAll.queryOptions())
         toast.success("Goal created successfully!");
         onSuccess?.();
         form.reset();
@@ -78,6 +80,8 @@ const GoalForm = ({ onSuccess, onCancel, initialValues }: GoalFormProps) => {
         toast.success("Goal updated successfully!");
         await queryClient.invalidateQueries(trpc.goals.getMany.queryOptions({}));
         await queryClient.invalidateQueries(trpc.goals.getManyByStatus.queryOptions({}));
+        await queryClient.invalidateQueries(trpc.goals.getManyLatestForCarousel.queryOptions({}))
+        await queryClient.invalidateQueries(trpc.goals.getAll.queryOptions())
         onSuccess?.();
         form.reset();
       },

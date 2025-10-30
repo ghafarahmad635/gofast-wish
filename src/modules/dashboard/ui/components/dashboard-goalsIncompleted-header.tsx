@@ -22,7 +22,7 @@ const GoalsInCompletedHeader = () => {
   return (
     <>
     <NewGoalDialog open={isDialogOpen} onOpenChange={setIsDialogOpen} />
-    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-4 px-4 md:px-8 py-6">
+    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
       {/* Left Section */}
       <div className="flex items-center gap-3">
         <div className="w-12 h-12 rounded-full bg-gradient-to-br from-teal-400 to-blue-500 flex items-center justify-center text-white shadow-md">

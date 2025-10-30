@@ -2,82 +2,68 @@ import { auth } from "@/lib/auth";
 import { loadSearchParams } from "@/modules/dashboard/params";
 import GoalsInCompleteHeader from "@/modules/dashboard/ui/components/dashbaord-completed-goals-header";
 import GoalsInCompletedHeader from "@/modules/dashboard/ui/components/dashboard-goalsIncompleted-header";
+import DashboardHabitsHeader from "@/modules/dashboard/ui/components/dashboard-habits-header";
 
 import DashboardHeader from "@/modules/dashboard/ui/components/dashboard-header"
-
-import GoalStatusView, { GoalsViewStatusErrorState, GoalsViewStatusLoadingState } from "@/modules/dashboard/ui/views/goals-status-view"
-
-import GoalsViewCompleted, { GoalsViewCompletedErrorState, GoalsViewCompletedLoadingState } from "@/modules/dashboard/ui/views/goals-views-completed";
-import GoalsViewToComplete, { GoalsViewDashboardErrorState, GoalsVieDashboardLoadingState } from "@/modules/dashboard/ui/views/goals-views-inCompleted";
-
-import { getQueryClient, trpc } from "@/trpc/server";
-import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
+import DashboardGaolsStatsSection from "@/modules/dashboard/ui/sections/dashboard-gaols-stats-section";
+import DashboardHabitSection from "@/modules/dashboard/ui/sections/dashboard-habits-section";
+import GoalsViewCompletedSection from "@/modules/dashboard/ui/sections/goals-view-completed.-section";
+import GoalsViewToCompleteSection from "@/modules/dashboard/ui/sections/goals-view-to-complete-section";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { SearchParams } from "nuqs";
-import { Suspense } from "react";
-import { ErrorBoundary } from "react-error-boundary";
+
 interface Props {
   searchParams: Promise<SearchParams>;
 };
 
 
 const DashboardPage = async({searchParams}:Props) => {
-  const filter = await loadSearchParams(searchParams);
+  const params=await loadSearchParams(searchParams)
+ 
   const session = await auth.api.getSession({
       headers: await headers(),
     });
      if (!session) {
       redirect("/sign-in");
     }
-    const queryClient=getQueryClient();
-    void queryClient.prefetchQuery(trpc.goals.getMany.queryOptions({}))
-    void queryClient.prefetchQuery(trpc.goals.getManyByStatus.queryOptions({
-      page: filter.inCompletedPage,
-      status:'incomplete'
-    }));
-    void queryClient.prefetchQuery(trpc.goals.getManyByStatus.queryOptions({
-      page: filter.completedPage,
-      status:"completed"
-    }));
+   
+  
+   
+  
   
 
   return (
+    
    <>
    <DashboardHeader/>
-   <HydrationBoundary state={dehydrate(queryClient)}>
-     <Suspense fallback={<GoalsViewStatusLoadingState />}>
-     <ErrorBoundary fallback={<GoalsViewStatusErrorState />}>
-      <GoalStatusView/>
-     </ErrorBoundary>
-     
-     </Suspense>
+   <section className="flex-1 pb-6 px-4 md:px-8 space-y-10">
+    <DashboardGaolsStatsSection/>
     
-   </HydrationBoundary>
-   <div>
-    Habit Tracker
-   </div>
-   {/* inCompleted goals section */}
-   <GoalsInCompletedHeader/>
-   <HydrationBoundary state={dehydrate(queryClient)}>
-    <Suspense fallback={<GoalsVieDashboardLoadingState />}>
-     <ErrorBoundary fallback={<GoalsViewDashboardErrorState />}>
-      <GoalsViewToComplete/>
-     </ErrorBoundary>
+    <article className="space-y-4">
+      <GoalsInCompletedHeader/>
+      <GoalsViewToCompleteSection/>
      
-     </Suspense>
-   </HydrationBoundary>
+    </article>
+    <article className="space-y-4">
+      <DashboardHabitsHeader/>
+      <DashboardHabitSection frequency={params.frequency}/>
+    </article>
+    <article className="space-y-4">
+     <GoalsInCompleteHeader/>
+      <GoalsViewCompletedSection/>
+    </article>
+   </section>
+   
+   
+   
+   
+   
+   
 
-  {/* completed goals section */}
-   <GoalsInCompleteHeader/>
-   <HydrationBoundary state={dehydrate(queryClient)}>
-    <Suspense fallback={<GoalsViewCompletedLoadingState />}>
-     <ErrorBoundary fallback={<GoalsViewCompletedErrorState />}>
-      <GoalsViewCompleted/>
-     </ErrorBoundary>
-     
-     </Suspense>
-   </HydrationBoundary>
+
+   
+   
    
    
    </>

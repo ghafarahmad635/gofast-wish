@@ -3,8 +3,7 @@ import React from 'react';
 import { useTRPC } from '@/trpc/client';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { ErrorState } from '@/components/error-state';
-import { motion } from 'framer-motion';
-import { Crown, Gauge, Target } from 'lucide-react';
+
 import GoalsSummaryCards from '@/components/GoalsSummaryCards';
 
 const GoalStatusView = () => {
