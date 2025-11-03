@@ -11,6 +11,7 @@ import Image from 'next/image';
 const DashboardHeader = () => {
   const { data, isPending,error } = authClient.useSession();
   
+  
 
   if (isPending) {
     return (

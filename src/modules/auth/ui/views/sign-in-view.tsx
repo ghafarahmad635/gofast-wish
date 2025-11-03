@@ -52,7 +52,7 @@ const SignInView = () => {
       {
         email: data.email,
         password: data.password,
-        callbackURL: '/',
+        callbackURL: '/dashboard',
       },
       {
         onSuccess: () => {
@@ -77,7 +77,7 @@ const SignInView = () => {
       await authClient.signIn.social(
         {
           provider,
-          callbackURL: '/',
+          callbackURL: '/dashboard',
         },
         {
           onSuccess: () => {

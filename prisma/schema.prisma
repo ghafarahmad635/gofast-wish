@@ -180,7 +180,7 @@ model HabitCompletion {
   status      CompletionStatus @default(pending)
   createdAt   DateTime @default(now())
 
-  habit       Habit    @relation(fields: [habitId], references: [id])
+  habit       Habit    @relation(fields: [habitId], references: [id],onDelete: Cascade)
 
   @@unique([habitId, date], name: "habitId_date") 
 }
