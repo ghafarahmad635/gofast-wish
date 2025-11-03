@@ -61,6 +61,33 @@ const GoalsViewCompleted = () => {
       })
     })
   }
+  // ✅ Toggle (Mark Complete / Uncomplete)
+  const markGoalToggle = useMutation(
+    trpc.goals.markToggleComplete.mutationOptions({
+      onSuccess: async (data) => {
+        await Promise.all([
+          queryClient.invalidateQueries(trpc.goals.getAll.queryOptions()),
+          queryClient.invalidateQueries(
+            trpc.goals.getManyLatestForCarousel.queryOptions({})
+          ),
+          queryClient.invalidateQueries(
+            trpc.goals.getManyByStatus.queryOptions({})
+          ),
+        ]);
+        toast.success(data.message);
+      },
+      onError: (error) => {
+        toast.error(error.message || "Failed to update goal status.");
+      },
+    })
+  );
+  const handleToggleGoal = async (goalId: string) => {
+    toast.promise(markGoalToggle.mutateAsync({ id: goalId }), {
+      loading: "Updating goal status...",
+      success: (data) => data?.message || "Goal updated successfully.",
+      error: "Failed to update goal.",
+    });
+  };
 
   // ✅ Empty state
   if (!data || data.items.length === 0) {
@@ -91,7 +118,15 @@ const GoalsViewCompleted = () => {
                 className="pl-4 sm:basis-1/2 lg:basis-1/3"
               >
                 <Card className="overflow-hidden shadow-sm p-0 hover:border-primary border-2 transition-all duration-300">
-                  <GoalCard goal={goal} onDelete={handleRemoveGoal} />
+                  <GoalCard 
+                  onToggleComplete={handleToggleGoal}
+                  isToggling={
+                    markGoalToggle.isPending &&
+                    markGoalToggle.variables?.id === goal.id
+                  }
+
+                  goal={goal} onDelete={handleRemoveGoal}
+                   />
                 </Card>
               </CarouselItem>
             ))}

@@ -95,6 +95,38 @@ const GoalsViewToComplete = () => {
       </div>
     )
   }
+  // ✅ Toggle goal completion (Mark Complete / Mark Incomplete)
+  const markGoalToggle = useMutation(
+    trpc.goals.markToggleComplete.mutationOptions({
+      onSuccess: async (data) => {
+        // Revalidate all queries that may be affected
+        await Promise.all([
+          queryClient.invalidateQueries(trpc.goals.getAll.queryOptions()),
+          queryClient.invalidateQueries(
+            trpc.goals.getManyLatestForCarousel.queryOptions({})
+          ),
+          queryClient.invalidateQueries(
+            trpc.goals.getManyByStatus.queryOptions({ })
+          ),
+          queryClient.invalidateQueries(trpc.goals.getMany.queryOptions({})),
+        ]);
+
+        toast.success(data.message);
+      },
+      onError: (error) => {
+        toast.error(error.message || "Failed to update goal status.");
+      },
+    })
+  );
+
+  const handleToggleGoal = async (goalId: string) => {
+    toast.promise(markGoalToggle.mutateAsync({ id: goalId }), {
+      loading: "Updating goal status...",
+      success: (data) => data?.message || "Goal updated successfully.",
+      error: "Failed to update goal.",
+    });
+  };
+
 
   return (
     <>
@@ -117,6 +149,11 @@ const GoalsViewToComplete = () => {
                     goal={goal}
                     onEdit={(id) => setFilters({ edit: id })}
                     onDelete={handleRemoveGoal}
+                     onToggleComplete={handleToggleGoal}
+                      isToggling={
+                        markGoalToggle.isPending &&
+                        markGoalToggle.variables?.id === goal.id
+                      }
                   />
                 </Card>
               </CarouselItem>

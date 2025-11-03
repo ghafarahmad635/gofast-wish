@@ -7,7 +7,7 @@ import DashboardHabitsHeader from "@/modules/dashboard/ui/components/dashboard-h
 import DashboardHeader from "@/modules/dashboard/ui/components/dashboard-header"
 import DashboardGaolsStatsSection from "@/modules/dashboard/ui/sections/dashboard-gaols-stats-section";
 import DashboardHabitSection from "@/modules/dashboard/ui/sections/dashboard-habits-section";
-import GoalsViewCompletedSection from "@/modules/dashboard/ui/sections/goals-view-completed.-section";
+import GoalsViewCompletedSection from "@/modules/dashboard/ui/sections/goals-view-completed-section";
 import GoalsViewToCompleteSection from "@/modules/dashboard/ui/sections/goals-view-to-complete-section";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";

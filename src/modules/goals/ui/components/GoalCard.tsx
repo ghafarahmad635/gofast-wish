@@ -109,7 +109,7 @@ export const GoalCard: React.FC<GoalCardProps> = ({
       </CardContent>
 
       {/* Footer */}
-      <div className="flex justify-between items-center px-5 pb-5 border-t pt-3">
+      <div className="flex justify-between items-center px-5 pb-5 border-t pt-3 w-full relative flex-wrap">
         <div className="flex gap-2">
           {onEdit && (
             <Button
