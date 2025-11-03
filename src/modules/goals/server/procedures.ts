@@ -367,6 +367,56 @@ export const goalsRouter = createTRPCRouter({
       maxItems: MAX_CAROUSEL_ITEMS,
     };
   }),
+  markToggleComplete: protectedProcedure
+    .input(
+      z.object({
+        id: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        // Step 1: Fetch goal & verify ownership
+        const goal = await db.goal.findFirst({
+          where: { id: input.id, userId: ctx.auth.user.id },
+        });
+
+        if (!goal) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Goal not found or unauthorized.",
+          });
+        }
+
+        // Step 2: Toggle state
+        const newState = !goal.isCompleted;
+
+        // Step 3: Update database
+        const updatedGoal = await db.goal.update({
+          where: { id: goal.id },
+          data: {
+            isCompleted: newState,
+            
+          },
+          include: { featuredImage: { select: { url: true } } },
+        });
+
+        return {
+          success: true,
+          goal: updatedGoal,
+          message: newState
+            ? "Goal marked as completed."
+            : "Goal marked as incomplete.",
+        };
+      } catch (error) {
+        console.error("❌ Failed to toggle goal state:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to toggle goal completion. Please try again later.",
+        });
+      }
+    }),
+
+  
 
   
 

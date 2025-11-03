@@ -58,6 +58,24 @@ const GoalsGridViews = () => {
       }
     })
   )
+  const markGoalToggle = useMutation(
+    trpc.goals.markToggleComplete.mutationOptions({
+      onSuccess: async (data) => {
+        await Promise.all([
+          queryClient.invalidateQueries(trpc.goals.getAll.queryOptions()),
+          queryClient.invalidateQueries(trpc.goals.getMany.queryOptions({})),
+          queryClient.invalidateQueries(trpc.goals.getManyByStatus.queryOptions({})),
+          queryClient.invalidateQueries(trpc.goals.getManyLatestForCarousel.queryOptions({})),
+        ]);
+        toast.success(data.message);
+      },
+      onError: (error) => {
+        toast.error(error.message || "Failed to update goal status.");
+      },
+    })
+  );
+
+
   const [ConfirmDialog, confirmDelete] = useConfirm(
     "Delete Goal",
     "Are you sure you want to delete this goal? This action cannot be undone."
@@ -72,6 +90,15 @@ const GoalsGridViews = () => {
     });
    })
   }
+  const handleToggleGoal = async (goalId: string) => {
+    toast.promise(markGoalToggle.mutateAsync({ id: goalId }), {
+      loading: "Updating goal status...",
+      success: (data) => data?.message || "Goal updated successfully.",
+      error: "Failed to update goal.",
+    });
+  };
+
+
 
   
 
@@ -102,8 +129,13 @@ const GoalsGridViews = () => {
             goal={goal}
             onEdit={(id) => setFilters({ edit: id })}
             onDelete={handleRemoveGoal}
-            
+            onToggleComplete={handleToggleGoal}
+            isToggling={
+              markGoalToggle.isPending &&
+              markGoalToggle.variables?.id === goal.id
+            }
           />
+
         ))}
       </div>
 
