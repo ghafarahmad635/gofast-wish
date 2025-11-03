@@ -61,10 +61,10 @@ export const DashboardHabitsHeader = () => {
 
           <Button
             onClick={() => setIsDialogOpen(true)}
-            className="flex items-center gap-2 bg-secondary text-white hover:bg-secondary/90"
+            className="flex items-center gap-2 bg-green text-white hover:bg-secondary/90"
           >
             <PlusIcon className="w-4 h-4" />
-            New
+            New Habit
           </Button>
         </ButtonGroup>
       </div>

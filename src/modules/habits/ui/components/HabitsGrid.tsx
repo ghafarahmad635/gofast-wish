@@ -86,7 +86,7 @@ export default function HabitsGrid({ habits }: Props) {
         />
       </ResponsiveDialog>
 
-      <Card className="bg-transparent p-0">
+      <Card className="bg-transparent p-0 border-0">
         <AnimatePresence mode="wait">
           <motion.div
             key="habits-grid"
@@ -94,7 +94,7 @@ export default function HabitsGrid({ habits }: Props) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.25 }}
-            className="mt-6 grid sm:grid-cols-2 xl:grid-cols-3 gap-6"
+            className=" grid sm:grid-cols-2 xl:grid-cols-3 gap-6"
           >
             {habits.items.length ? (
               habits.items.map((h) => (

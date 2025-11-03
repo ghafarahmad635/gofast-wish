@@ -47,10 +47,10 @@ export const HabitsListHeader = () => {
 
           <Button
             onClick={() => setIsDialogOpen(true)}
-            className="flex items-center gap-2 bg-secondary"
+            className="flex items-center gap-2 bg-green"
           >
             <PlusIcon className="w-4 h-4" />
-            New
+            New Habit
           </Button>
         </ButtonGroup>
       </div>

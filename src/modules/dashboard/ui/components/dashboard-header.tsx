@@ -1,18 +1,16 @@
 'use client';
 
+import { authClient } from '@/lib/auth-client.ts';
 import { motion } from 'framer-motion';
 import { User as UserIcon } from 'lucide-react';
 import Image from 'next/image';
-import { createAuthClient } from 'better-auth/react';
 
-const { useSession } = createAuthClient();
+
+
 
 const DashboardHeader = () => {
-  const {
-    data: session,
-    isPending,
-    error,
-  } = useSession();
+  const { data, isPending,error } = authClient.useSession();
+  
 
   if (isPending) {
     return (
@@ -28,7 +26,7 @@ const DashboardHeader = () => {
     );
   }
 
-  if (error || !session?.user) {
+  if (error || !data?.user) {
     return (
       <div className="py-6 px-4 md:px-8">
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700">
@@ -38,7 +36,7 @@ const DashboardHeader = () => {
     );
   }
 
-  const user = session.user;
+  const user = data.user;
   const firstName = user.name?.split(' ')[0] || 'User';
 
   return (

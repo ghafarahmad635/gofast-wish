@@ -72,9 +72,10 @@ export default function HabitSummaryCards({ total, completed, completionRate }: 
           transition={{ delay: i * 0.1, duration: 0.5, ease: 'easeOut' }}
         >
           <Card
-            className={`relative p-6 rounded-2xl border border-gray-200 bg-gradient-to-br ${item.gradient}
-            backdrop-blur-sm shadow-sm hover:shadow-lg hover:border-gray-300 transition-all duration-300 group`}
+            className={`relative p-6 rounded-2xl border border-black/20 bg-gradient-to-br ${item.gradient}
+            backdrop-blur-sm shadow-sm hover:shadow-lg hover:border-black/40 transition-all duration-300 group`}
           >
+
             {/* Shine overlay */}
             <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none">
               <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent" />
