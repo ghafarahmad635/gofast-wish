@@ -312,8 +312,8 @@ export const auth = betterAuth({
   ],
   hooks: {
     after:createAuthMiddleware(async(ctx)=>{
-       // run only after sign-up
-      if (!ctx.path.startsWith("/sign-up")) return;
+       
+    
 
       const newSession = ctx.context.newSession;
       const user = newSession?.user;
