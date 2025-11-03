@@ -49,7 +49,7 @@ export default function VerifyOtpView({ email }: { email: string }) {
       {
         onSuccess: async () => {
           setError(null)
-          await welcomeEmail.mutateAsync({ email })
+          
           toast.success("✅ You successfully verified your email")
           router.push("/dashboard")
         },

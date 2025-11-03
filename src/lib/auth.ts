@@ -1,9 +1,9 @@
-import { betterAuth } from "better-auth";
+import { betterAuth, createMiddleware } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { admin as adminPlugin, emailOTP } from "better-auth/plugins";
 import { stripe } from "@better-auth/stripe";
 import Stripe from "stripe";
-
+import { createAuthMiddleware } from "better-auth/api";
 import { db } from "./prisma";
 import { sendEmail } from "./email";
 
@@ -310,4 +310,101 @@ export const auth = betterAuth({
     })
 
   ],
+  hooks: {
+    after:createAuthMiddleware(async(ctx)=>{
+       // run only after sign-up
+      if (!ctx.path.startsWith("/sign-up")) return;
+
+      const newSession = ctx.context.newSession;
+      const user = newSession?.user;
+      if (!user) return;
+       try {
+        // ✅ Create default goals for the new user
+        await db.goal.createMany({
+           data: [
+            {
+              title: "Welcome to GoFast Wish 🎉",
+              description:
+                "This is your first goal. You can edit or delete it anytime.",
+              category: "Getting Started",
+              priority: 2,
+              isCompleted: false,
+              userId: user.id,
+            },
+            {
+              title: "Explore Your Dashboard",
+              description:
+                "Familiarize yourself with your dashboard and start creating new wishes and habits.",
+              category: "Setup",
+              priority: 3,
+              isCompleted: false,
+              userId: user.id,
+            },
+            {
+              title: "Customize Your Profile",
+              description:
+                "Add your name, country, and time zone to personalize your experience.",
+              category: "Profile",
+              priority: 3,
+              isCompleted: false,
+              userId: user.id,
+            },
+            {
+              title: "Start Your First Habit 🚀",
+              description:
+                "Track your first habit to stay motivated and build progress over time.",
+              category: "Habits",
+              priority: 1,
+              isCompleted: false,
+              userId: user.id,
+            },
+          ],
+        });
+        // --- Default Habits ---
+        await db.habit.createMany({
+          data: [
+            {
+              title: "Drink Water 💧",
+              description: "Stay hydrated with 8 glasses of water today.",
+              frequency: "daily",
+              startDate: new Date(),
+              userId: user.id,
+            },
+            {
+              title: "Take a Short Walk 🚶‍♂️",
+              description: "Go outside for a 10-minute walk.",
+              frequency: "daily",
+              startDate: new Date(),
+              userId: user.id,
+            },
+            {
+              title: "Reflect on Your Day ✍️",
+              description: "Write one line about what went well today.",
+              frequency: "daily",
+              startDate: new Date(),
+              userId: user.id,
+            },
+            {
+              title: "Plan Tomorrow’s Tasks 🗓️",
+              description: "List your top 3 goals for tomorrow.",
+              frequency: "daily",
+              startDate: new Date(),
+              userId: user.id,
+            },
+          ],
+        })
+
+        
+
+        
+        await sendEmail({
+          to: user.email,
+          subject: "Welcome to GoFast Wish 🎉",
+          react: WelcomeEmail({ name: user.name }),
+        });
+      } catch (err) {
+        console.error("❌ Failed to create default data:", err);
+      }
+    })
+  }
 });

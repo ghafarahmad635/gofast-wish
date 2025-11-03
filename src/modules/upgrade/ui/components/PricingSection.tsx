@@ -36,7 +36,7 @@ export function PricingSection({
           {heading}
         </h2>
         {description && (
-          <p className="text-center text-muted-foreground text-sm md:text-base">
+          <p className="text-center text-muted-foreground text-base md:text-xl">
             {description}
           </p>
         )}

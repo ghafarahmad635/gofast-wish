@@ -60,6 +60,7 @@ const SignUpView = () => {
       },
       {
         onSuccess: () => {
+         
           setError(null)
           router.push(`/verify-otp?email=${encodeURIComponent(data.email)}`);
         },

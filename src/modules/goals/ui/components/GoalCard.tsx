@@ -25,7 +25,7 @@ export const GoalCard: React.FC<GoalCardProps> = ({
     ? format(new Date(goal.targetDate), "MMM d, yyyy")
     : null
 
-  
+  const isCompleted = goal.isCompleted
 
   return (
     <Card
@@ -34,21 +34,33 @@ export const GoalCard: React.FC<GoalCardProps> = ({
                  hover:shadow-lg transition-all duration-300 
                  bg-white/90 backdrop-blur-sm p-0 gap-0"
     >
-      {/* Image */}
+      {/* ✅ Image section (only visual difference when completed) */}
       <div className="relative w-full aspect-[16/9] overflow-hidden rounded-t-lg">
         {goal.featuredImage?.url ? (
           <Image
             src={goal.featuredImage.url}
             alt={goal.title}
             fill
-            className="object-cover transition-transform duration-500 group-hover:scale-105"
+            className={`object-cover transition-transform duration-500 group-hover:scale-105 ${
+              isCompleted ? "grayscale-[40%] brightness-90" : ""
+            }`}
           />
         ) : (
           <div className="flex items-center justify-center w-full h-full bg-gray-100 text-gray-500 text-sm">
             No Image
           </div>
         )}
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300 rounded-t-lg" />
+
+        {/* ✅ Completed overlay + check badge */}
+        {isCompleted && (
+          <>
+            <div className="absolute inset-0 bg-black/30 backdrop-blur-[1px]"></div>
+            <div className="absolute top-2 right-2 flex items-center gap-1 bg-green-600 text-white text-xs font-medium px-2.5 py-1.5 rounded-md shadow-md">
+              <Check className="w-3.5 h-3.5" />
+              Completed
+            </div>
+          </>
+        )}
       </div>
 
       {/* Header */}
@@ -136,39 +148,37 @@ export const GoalCard: React.FC<GoalCardProps> = ({
           )}
         </div>
 
-        {/* ✅ Mark Complete Button */}
+        {/* Toggle Complete */}
         {onToggleComplete && (
-        <Button
-          size="sm"
-          variant={goal.isCompleted ? "outline" : "default"}
-          disabled={isToggling}
-          className={`flex items-center gap-1 ${
-            goal.isCompleted
-              ? "text-yellow-600 border-yellow-400 hover:bg-yellow-50"
-              : "bg-primary text-white hover:bg-primary/90"
-          } ${isToggling ? "opacity-80 cursor-not-allowed" : ""}`}
-          onClick={() => onToggleComplete(goal.id)}
-        >
-          {isToggling ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Updating...
-            </>
-          ) : goal.isCompleted ? (
-            <>
-              <AlertCircle className="w-4 h-4" />
-              Mark Incomplete
-            </>
-          ) : (
-            <>
-              <Check className="w-4 h-4" />
-              Mark Complete
-            </>
-          )}
-        </Button>
-      )}
-
-
+          <Button
+            size="sm"
+            variant={isCompleted ? "outline" : "default"}
+            disabled={isToggling}
+            className={`flex items-center gap-1 ${
+              isCompleted
+                ? "text-yellow-600 border-yellow-400 hover:bg-yellow-50"
+                : "bg-primary text-white hover:bg-primary/90"
+            } ${isToggling ? "opacity-80 cursor-not-allowed" : ""}`}
+            onClick={() => onToggleComplete(goal.id)}
+          >
+            {isToggling ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Updating...
+              </>
+            ) : isCompleted ? (
+              <>
+                <AlertCircle className="w-4 h-4" />
+                Mark Incomplete
+              </>
+            ) : (
+              <>
+                <Check className="w-4 h-4" />
+                Mark Complete
+              </>
+            )}
+          </Button>
+        )}
       </div>
     </Card>
   )
