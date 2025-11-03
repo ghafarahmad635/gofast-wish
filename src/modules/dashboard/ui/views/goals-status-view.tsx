@@ -9,10 +9,10 @@ import GoalsSummaryCards from '@/components/GoalsSummaryCards';
 const GoalStatusView = () => {
   const trpc = useTRPC();
   
-  const { data } = useSuspenseQuery(trpc.goals.getMany.queryOptions({}));
+  const { data } = useSuspenseQuery(trpc.goals.getAll.queryOptions());
 
-  const totalGoals = data?.items?.length || 0;
-  const completedGoals = data?.items?.filter((g: any) => g.isCompleted)?.length || 0;
+  const totalGoals = data.length || 0;
+  const completedGoals = data.filter((g: any) => g.isCompleted)?.length || 0;
   const progress = totalGoals > 0 ? Math.round((completedGoals / totalGoals) * 100) : 0;
 
 

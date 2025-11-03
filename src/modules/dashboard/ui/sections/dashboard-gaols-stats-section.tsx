@@ -6,7 +6,7 @@ import { getQueryClient, trpc } from '@/trpc/server'
 
 const DashboardGaolsStatsSection = async() => {
      const queryClient=getQueryClient();
-       void queryClient.prefetchQuery(trpc.goals.getMany.queryOptions({}))
+       void queryClient.prefetchQuery(trpc.goals.getAll.queryOptions())
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
      <Suspense fallback={<GoalsViewStatusLoadingState />}>
