@@ -88,11 +88,11 @@ export const auth = betterAuth({
           await sendEmail({
             to: user.email,
             subject: "Welcome to GoFast Wish — Your Stripe Account is Ready",
-            react: SubscriptionActivatedEmail({
-              title: "Welcome to GoFast Wish",
-              message:
-                "Your account is now connected to our payment system. You can start your subscription or upgrade anytime.",
-            }),
+            // react: SubscriptionActivatedEmail({
+            //   title: "Welcome to GoFast Wish",
+            //   message:
+            //     "Your account is now connected to our payment system. You can start your subscription or upgrade anytime.",
+            // }),
           })
         } catch (err) {
           console.error("[Stripe:onCustomerCreate] Failed:", err)
@@ -397,11 +397,11 @@ export const auth = betterAuth({
         
 
         
-        await sendEmail({
-          to: user.email,
-          subject: "Welcome to GoFast Wish 🎉",
-          react: WelcomeEmail({ name: user.name }),
-        });
+        // await sendEmail({
+        //   to: user.email,
+        //   subject: "Welcome to GoFast Wish 🎉",
+        //   react: WelcomeEmail({ name: user.name }),
+        // });
       } catch (err) {
         console.error("❌ Failed to create default data:", err);
       }
