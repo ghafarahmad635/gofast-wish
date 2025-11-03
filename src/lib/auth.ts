@@ -397,11 +397,11 @@ export const auth = betterAuth({
         
 
         
-        // await sendEmail({
-        //   to: user.email,
-        //   subject: "Welcome to GoFast Wish 🎉",
-        //   react: WelcomeEmail({ name: user.name }),
-        // });
+        await sendEmail({
+          to: user.email,
+          subject: "Welcome to GoFast Wish 🎉",
+          react: WelcomeEmail({ name: user.name }),
+        });
       } catch (err) {
         console.error("❌ Failed to create default data:", err);
       }
