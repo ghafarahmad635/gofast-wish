@@ -7,19 +7,20 @@ import { cookies } from "next/headers";
 interface Props {
   children: React.ReactNode;
 }
-const Layout = async({ children }: Props) => {
-    const cookieStore = await cookies();
-    const defaultOpen = cookieStore.get(GOFASTWISH_SIDEBAR_KEY)?.value === "true"
-    console.log("defaultOpen",defaultOpen);
-    return(
-           <SidebarProvider defaultOpen={defaultOpen}>
-             <DashboardSidebar />
-              <main className="flex flex-col min-h-screen w-screen bg-muted">
-                <DashboardNavbar />
-                {children}
-              </main>
-          </SidebarProvider>
-    )
-}
+const Layout = async ({ children }: Props) => {
+  const cookieStore = await cookies();
+  const defaultOpen = cookieStore.get(GOFASTWISH_SIDEBAR_KEY)?.value === "true";
+
+  return (
+    <SidebarProvider defaultOpen={defaultOpen}>
+      <DashboardSidebar />
+      <main className="flex flex-col min-h-screen w-full bg-muted overflow-x-hidden">
+        <DashboardNavbar />
+        {children}
+      </main>
+    </SidebarProvider>
+  );
+};
+
 
 export default Layout

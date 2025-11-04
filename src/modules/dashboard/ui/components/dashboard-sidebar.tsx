@@ -4,7 +4,7 @@ import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupConte
 import Link from "next/link"
 import Image from "next/image";
 import { Separator } from "@/components/ui/separator";
-import { RepeatIcon, StarIcon, TargetIcon } from "lucide-react";
+import { PuzzleIcon, RepeatIcon, StarIcon, TargetIcon } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import DashboardUserButton from "./dashboard-user-button";
@@ -22,6 +22,7 @@ const firstSection = [
 ];
 
 const secondSection = [
+ 
   {
     icon: StarIcon,
     label: "Upgrade",
@@ -30,7 +31,7 @@ const secondSection = [
 ];
 const DashboardSidebar = () => {
   const pathname=usePathname();
-  console.log(pathname);
+  
   return (
    <Sidebar>
        <SidebarHeader className="text-sidebar-accent-foreground">
@@ -93,6 +94,21 @@ const DashboardSidebar = () => {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  className={cn(
+                    "h-10 hover:bg-linear-to-r/oklch border border-transparent hover:border-[#5D6B68]/10 from-sidebar-accent from-5% via-30% via-sidebar/50 to-sidebar/50",
+                    pathname.includes("/addons") && "bg-linear-to-r/oklch border-[#5D6B68]/10"
+                  )}
+                  isActive={pathname.includes("/addons")}
+                >
+                  <Link href="/addons">
+                    <PuzzleIcon className="size-5 text-primary" />
+                    <span className="text-sm font-medium tracking-tight">Add-ons</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
              </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

@@ -34,7 +34,7 @@ import { GoalGetOne } from "../../types";
 interface GoalFormProps {
   onSuccess?: () => void;
   onCancel?: () => void;
-  initialValues?: GoalGetOne;
+ initialValues?: Partial<GoalGetOne>
 }
 
 const GoalForm = ({ onSuccess, onCancel, initialValues }: GoalFormProps) => {

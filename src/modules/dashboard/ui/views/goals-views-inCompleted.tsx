@@ -130,21 +130,21 @@ const GoalsViewToComplete = () => {
 
   return (
     <>
-      <div className="flex-1 w-full  mx-auto">
+      <div className=" w-full relative">
         <Carousel
           plugins={[plugin.current]}
           onMouseEnter={plugin.current.stop}
           onMouseLeave={plugin.current.reset}
           opts={{ align: "start", loop: true }}
-          className="w-full "
+          className="w-full p-0"
         >
           <CarouselContent className="-ml-4">
             {data.items.map((goal) => (
               <CarouselItem
                 key={goal.id}
-                className="pl-4 sm:basis-1/2 lg:basis-1/3"
+                 className="pl-4 sm:basis-1/2 lg:basis-1/3 !max-w-full overflow-hidden  m-0"
               >
-                <Card className="overflow-hidden shadow-sm p-0 hover:border-primary border-2 transition-all duration-300 ">
+                
                   <GoalCard
                     goal={goal}
                     onEdit={(id) => setFilters({ edit: id })}
@@ -155,7 +155,7 @@ const GoalsViewToComplete = () => {
                         markGoalToggle.variables?.id === goal.id
                       }
                   />
-                </Card>
+                
               </CarouselItem>
             ))}
           </CarouselContent>

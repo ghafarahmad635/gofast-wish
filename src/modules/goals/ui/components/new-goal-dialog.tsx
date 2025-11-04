@@ -6,11 +6,17 @@ import GoalForm from "./goal-form";
 interface NewGoalDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  defaultValues?: {
+    title?: string
+    description?: string
+    category?: string
+  }
 };
 
 export const NewGoalDialog = ({
   open,
   onOpenChange,
+  defaultValues
 }: NewGoalDialogProps) => {
   return (
     <ResponsiveDialog
@@ -22,6 +28,11 @@ export const NewGoalDialog = ({
       <GoalForm
         onSuccess={() => onOpenChange(false)}
         onCancel={() => onOpenChange(false)}
+         initialValues={{
+            title: defaultValues?.title ?? '',
+            description: defaultValues?.description ?? '',
+            category: defaultValues?.category ?? '',
+          }}
       />
     </ResponsiveDialog>
   );
