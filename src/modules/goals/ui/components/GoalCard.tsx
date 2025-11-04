@@ -1,7 +1,7 @@
 "use client"
 import Image from "next/image"
 import { format } from "date-fns"
-import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card"
+import { Card, CardHeader, CardContent, CardTitle, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tag, Calendar, AlertCircle, Check, Edit2, Trash2, Loader2 } from "lucide-react"
 import React from "react"
@@ -29,11 +29,12 @@ export const GoalCard: React.FC<GoalCardProps> = ({
 
   return (
     <Card
-      key={goal.id}
-      className="group relative overflow-hidden border border-gray-200 rounded-lg shadow-sm 
-                 hover:shadow-lg transition-all duration-300 
-                 bg-white/90 backdrop-blur-sm p-0 gap-0"
-    >
+  key={goal.id}
+  className="group relative overflow-hidden border border-gray-200 rounded-lg shadow-sm 
+             hover:shadow-lg transition-all duration-300 w-full max-w-full
+             bg-white/90 backdrop-blur-sm p-0 m-0"
+>
+
       {/* ✅ Image section (only visual difference when completed) */}
       <div className="relative w-full aspect-[16/9] overflow-hidden rounded-t-lg">
         {goal.featuredImage?.url ? (
@@ -121,65 +122,67 @@ export const GoalCard: React.FC<GoalCardProps> = ({
       </CardContent>
 
       {/* Footer */}
-      <div className="flex justify-between items-center px-5 pb-5 border-t pt-3 w-full relative flex-wrap">
-        <div className="flex gap-2">
-          {onEdit && (
-            <Button
-              size="sm"
-              variant="outline"
-              className="text-gray-600 border-gray-300 hover:text-primary hover:border-primary flex items-center gap-1"
-              onClick={() => onEdit(goal.id)}
-            >
-              <Edit2 className="w-4 h-4" />
-              Edit
-            </Button>
-          )}
+     <CardFooter
+  className="w-full relative px-5 py-3 text-sm text-gray-600 flex flex-wrap justify-between items-center gap-2"
+>
+  <div className="flex flex-wrap gap-2">
+    {onEdit && (
+      <Button
+        size="sm"
+        variant="outline"
+        className="text-gray-600 border-gray-300 hover:text-primary hover:border-primary flex items-center gap-1"
+        onClick={() => onEdit(goal.id)}
+      >
+        <Edit2 className="w-4 h-4" />
+        Edit
+      </Button>
+    )}
 
-          {onDelete && (
-            <Button
-              size="sm"
-              variant="outline"
-              className="text-gray-600 border-gray-300 hover:text-red-600 hover:border-red-400 flex items-center gap-1"
-              onClick={() => onDelete(goal.id)}
-            >
-              <Trash2 className="w-4 h-4" />
-              Delete
-            </Button>
-          )}
-        </div>
+    {onDelete && (
+      <Button
+        size="sm"
+        variant="outline"
+        className="text-gray-600 border-gray-300 hover:text-red-600 hover:border-red-400 flex items-center gap-1"
+        onClick={() => onDelete(goal.id)}
+      >
+        <Trash2 className="w-4 h-4" />
+        Delete
+      </Button>
+    )}
+  </div>
 
-        {/* Toggle Complete */}
-        {onToggleComplete && (
-          <Button
-            size="sm"
-            variant={isCompleted ? "outline" : "default"}
-            disabled={isToggling}
-            className={`flex items-center gap-1 ${
-              isCompleted
-                ? "text-yellow-600 border-yellow-400 hover:bg-yellow-50"
-                : "bg-primary text-white hover:bg-primary/90"
-            } ${isToggling ? "opacity-80 cursor-not-allowed" : ""}`}
-            onClick={() => onToggleComplete(goal.id)}
-          >
-            {isToggling ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Updating...
-              </>
-            ) : isCompleted ? (
-              <>
-                <AlertCircle className="w-4 h-4" />
-                Mark Incomplete
-              </>
-            ) : (
-              <>
-                <Check className="w-4 h-4" />
-                Mark Complete
-              </>
-            )}
-          </Button>
-        )}
-      </div>
+  {onToggleComplete && (
+    <Button
+      size="sm"
+      variant={isCompleted ? "outline" : "default"}
+      disabled={isToggling}
+      className={`flex items-center gap-1 shrink-0 ${
+        isCompleted
+          ? "text-yellow-600 border-yellow-400 hover:bg-yellow-50"
+          : "bg-primary text-white hover:bg-primary/90"
+      } ${isToggling ? "opacity-80 cursor-not-allowed" : ""}`}
+      onClick={() => onToggleComplete(goal.id)}
+    >
+      {isToggling ? (
+        <>
+          <Loader2 className="w-4 h-4 animate-spin" />
+          Updating...
+        </>
+      ) : isCompleted ? (
+        <>
+          <AlertCircle className="w-4 h-4" />
+          Mark Incomplete
+        </>
+      ) : (
+        <>
+          <Check className="w-4 h-4" />
+          Mark Complete
+        </>
+      )}
+    </Button>
+  )}
+</CardFooter>
+
     </Card>
   )
 }

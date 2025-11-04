@@ -71,7 +71,7 @@ const GoalsViewCompleted = () => {
             trpc.goals.getManyLatestForCarousel.queryOptions({})
           ),
           queryClient.invalidateQueries(
-            trpc.goals.getManyByStatus.queryOptions({})
+            trpc.goals.getManyByStatus.queryOptions({ status: "completed" })
           ),
         ]);
         toast.success(data.message);
