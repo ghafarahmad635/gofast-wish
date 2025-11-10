@@ -13,7 +13,7 @@ export default function AddonMenuView() {
   const trpc = useTRPC()
 
   // ✅ Suspense-safe data fetching
-  const { data: addons } = useSuspenseQuery(trpc.addOnRouter.getMany.queryOptions())
+  const { data: addons } = useSuspenseQuery(trpc.addonsRouter.getMany.queryOptions())
 
   return (
     <SidebarMenu>

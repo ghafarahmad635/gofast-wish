@@ -8,7 +8,7 @@ import AddonMenuView, { AddonsMenuViewErrorState, AddonsMenuViewLoadingState } f
 const AddonsMenuView = async() => {
      const queryClient = getQueryClient();
      void queryClient.prefetchQuery(
-        trpc.addOnRouter.getMany.queryOptions() 
+        trpc.addonsRouter.getMany.queryOptions() 
     );
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
