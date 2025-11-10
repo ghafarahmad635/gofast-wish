@@ -38,7 +38,7 @@ export default function BucketListView({id}:Props) {
 
         <GenerateForm onGenerate={setIdeas} toolID={id}  onLoadingChange={setIsGenerating}/>
         {/* ✅ Show loader while generating */}
-        {isGenerating && (
+       {isGenerating && ideas.length === 0 && (
           <div className="mt-8 animate-pulse space-y-4">
             <div className="h-6 w-1/2 bg-gray-200 rounded"></div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-4">
@@ -49,13 +49,21 @@ export default function BucketListView({id}:Props) {
           </div>
         )}
         {/* ✅ Show results */}
-        {!isGenerating && ideas.length > 0 && (
+        {ideas.length > 0 && (
           <div className="mt-10">
-            <h2 className="text-2xl font-semibold mb-4">Generated Ideas</h2>
+            <div className="flex items-center gap-3 mb-2">
+              <h2 className="text-2xl font-semibold">Generated Ideas</h2>
+              {isGenerating && (
+                <span className="text-sm px-2 py-1 rounded bg-gray-100 border">
+                  Generating…
+                </span>
+              )}
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {ideas.map((idea, i) => (
                 <BucketListIdeaCard
-                  key={i}
+                  key={`${idea.title}-${i}`}
                   index={i}
                   title={idea.title}
                   description={idea.description}
