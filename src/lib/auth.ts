@@ -424,10 +424,9 @@ export const auth = betterAuth({
     },
   },
   hooks: {
-    // keep your other hooks if needed, but remove the seeding from here
+    
     after: createAuthMiddleware(async (ctx) => {
-      // do nothing here for seeding to avoid firing on session renewal
-      // you can still keep your sign up logging if you want
+      
       if (ctx.path.startsWith("/sign-up")) {
         const newSession = ctx.context.newSession;
         if (newSession) {

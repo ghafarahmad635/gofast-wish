@@ -1,11 +1,13 @@
-import BucketListView, { BucketListViewErrorState, BucketListViewLoadingState } from '@/modules/addons/tools/bucketList/ui/views/bucket-list-view'
+
 import { auth } from '@/lib/auth'
+import TravelDreamMatcherView, { TravelDreamMatcherViewErrorState, TravelDreamMatcherViewLoadingState } from '@/modules/addons/tools/Travel Dream Matcher/ui/views/travel-dream-matcher-view'
 import { getQueryClient, trpc } from '@/trpc/server'
 import { dehydrate, HydrationBoundary } from '@tanstack/react-query'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import React, { Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
+
 interface Props{
   params:Promise<{
     id:string
@@ -25,9 +27,9 @@ const page = async({params}:Props) => {
   
   return (
      <HydrationBoundary state={dehydrate(queryClient)}>
-        <Suspense fallback={<BucketListViewLoadingState />}>
-          <ErrorBoundary fallback={<BucketListViewErrorState />}>
-            <BucketListView id={id}/>
+        <Suspense fallback={<TravelDreamMatcherViewLoadingState />}>
+          <ErrorBoundary fallback={<TravelDreamMatcherViewErrorState />}>
+            <TravelDreamMatcherView id={id}/>
           </ErrorBoundary>
         </Suspense>
 

@@ -2,8 +2,11 @@ import { NextResponse } from "next/server";
 import { streamObject } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { db } from "@/lib/prisma";
-import { bucketListIdeaItem } from "@/lib/ai/schemas/bucketListSchema";
+
 import { z } from "zod";
+import { bucketListIdeaItem } from "@/modules/addons/tools/bucketList/schema";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -16,6 +19,9 @@ const Body = z.object({
 });
 
 export async function POST(req: Request) {
+   const session = await auth.api.getSession({ headers: await headers() });
+    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  
   const parsed = Body.safeParse(await req.json());
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
@@ -52,9 +58,9 @@ export async function POST(req: Request) {
     : prompt;
   
   const result = streamObject({
-    model: openai("gpt-4o"), // or your aiModel from @/lib/ai
+    model: openai("gpt-4o"),
     output: "array",
-    schema: bucketListIdeaItem, // single item schema
+    schema: bucketListIdeaItem,
     system: `${systemPrompt}\nAlways return exactly ${effectiveCount} items.`,
     prompt: effectivePrompt,
   });

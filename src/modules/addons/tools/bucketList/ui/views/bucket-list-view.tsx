@@ -1,13 +1,14 @@
 'use client'
 
 import React, { useState } from 'react'
-import GenerateForm from '../components/generate-form'
+import GenerateForm from '../components/bucket-generate-form'
 import { useTRPC } from '@/trpc/client';
-import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { ErrorState } from '@/components/error-state';
 import BucketListIdeaCard from '../components/bucket-list-idea-card';
-import { toast } from 'sonner';
 import { NewGoalDialog } from '@/modules/goals/ui/components/new-goal-dialog';
+import { Ideas } from '../../schema';
+
 
 interface Props{
   id:string
@@ -15,10 +16,10 @@ interface Props{
 export default function BucketListView({id}:Props) {
   
   
-  const [ideas, setIdeas] = useState<any[]>([]);
+  const [ideas, setIdeas] = useState<Ideas>([]);  
   const [isGenerating, setIsGenerating] = useState(false)
    const trpc = useTRPC()
-    const { data } = useSuspenseQuery(trpc.bucketListRouter.getOneById.queryOptions({
+    const { data } = useSuspenseQuery(trpc.addonsRouter.getOneById.queryOptions({
       id
     }));
     const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -31,10 +32,11 @@ export default function BucketListView({id}:Props) {
     onOpenChange={setIsDialogOpen}
       defaultValues={selectedIdea || undefined}
     />
-      <div className="py-10 px-4">
-        <h1 className="text-3xl font-bold mb-6">
+      <div className="py-5 px-4">
+        <h1 className="text-3xl font-bold">
           {data.name}
         </h1>
+        <p>{data.description}</p>
 
         <GenerateForm onGenerate={setIdeas} toolID={id}  onLoadingChange={setIsGenerating}/>
         {/* ✅ Show loader while generating */}

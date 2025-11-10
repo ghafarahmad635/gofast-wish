@@ -10,11 +10,10 @@ import Link from 'next/link'
 
 export default function AddonsView() {
   const trpc = useTRPC()
-  const queryClient = useQueryClient()
-  const router = useRouter()
+
 
   // ✅ Fetch all add-ons
-  const { data } = useSuspenseQuery(trpc.addOnRouter.getMany.queryOptions())
+  const { data } = useSuspenseQuery(trpc.addonsRouter.getMany.queryOptions())
 
   return (
     <div className="p-6">

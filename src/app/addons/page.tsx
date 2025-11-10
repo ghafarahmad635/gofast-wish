@@ -13,7 +13,7 @@ const page = async() => {
       headers: await headers(),
     })
     if (!session) redirect("/sign-in")
-    void queryClient.prefetchQuery(trpc.addOnRouter.getMany.queryOptions())
+    void queryClient.prefetchQuery(trpc.addonsRouter.getMany.queryOptions())
   return (
      <HydrationBoundary state={dehydrate(queryClient)}>
         <Suspense fallback={<AddonsViewLoadingState />}>

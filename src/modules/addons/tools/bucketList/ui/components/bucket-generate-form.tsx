@@ -21,12 +21,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { GenerateInput, generateSchema } from '../../schema';
+import { GenerateInput, generateSchema, Ideas, ideasArraySchema } from '../../schema';
 import { toast } from 'sonner';
-import { useBucketIdeas } from '@/hooks/bucket-list/useBucketIdeas';
+import { experimental_useObject as useObject } from '@ai-sdk/react';
+
+
 
 interface Props {
-  onGenerate: (ideas: any[]) => void;
+  onGenerate: (ideas: Ideas) => void;
   toolID: string;
   onLoadingChange?: (loading: boolean) => void;
 }
@@ -43,7 +45,13 @@ const interestOptions = [
 ] as const;
 
 export default function GenerateForm({ onGenerate, toolID, onLoadingChange }: Props) {
-  const { object, submit, isLoading, stop, error } = useBucketIdeas();
+ 
+  const { object, submit, isLoading, stop, error } = useObject({
+    api:"/api/bucket-list/stream",
+    schema:ideasArraySchema,
+    credentials: 'include',        
+    
+  });
 
   const form = useForm<GenerateInput>({
     resolver: zodResolver(generateSchema),
@@ -65,12 +73,14 @@ export default function GenerateForm({ onGenerate, toolID, onLoadingChange }: Pr
 
   // stream updates arrive as partial arrays
   useEffect(() => {
-    if (object) onGenerate(object);
+    if (Array.isArray(object)) onGenerate(object as Ideas);
   }, [object, onGenerate]);
 
   useEffect(() => {
     if (error) toast.error('Stream failed');
   }, [error]);
+
+  
 
   const responseCountItems = useMemo(() => [1, 2, 3, 4, 5, 6], []);
 
