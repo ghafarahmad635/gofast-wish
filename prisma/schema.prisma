@@ -25,6 +25,8 @@ model User {
   banExpires    DateTime? // ✅ new
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+  demoSeededAt     DateTime?
+  welcomeEmailSent Boolean  @default(false)
   sessions      Session[]
   accounts      Account[]
 
@@ -71,6 +73,7 @@ model Account {
   password              String?
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
+  
 
   @@map("account")
 }

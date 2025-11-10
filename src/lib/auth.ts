@@ -310,101 +310,130 @@ export const auth = betterAuth({
     })
 
   ],
+  databaseHooks: {
+    user: {
+      create: {
+        // runs once after Better Auth has inserted the user
+        after: async (user, ctx) => {
+          try {
+            // short circuit if already seeded for some reason
+            const existing = await db.user.findUnique({
+              where: { id: user.id },
+              select: { demoSeededAt: true, welcomeEmailSent: true, email: true, name: true },
+            });
+            if (existing?.demoSeededAt) return;
+
+            await db.$transaction(async (tx) => {
+              // default goals
+              await tx.goal.createMany({
+                data: [
+                  {
+                    title: "Welcome to GoFast Wish 🎉",
+                    description: "This is your first goal. You can edit or delete it anytime.",
+                    category: "Getting Started",
+                    priority: 2,
+                    isCompleted: false,
+                    userId: user.id,
+                  },
+                  {
+                    title: "Explore Your Dashboard",
+                    description: "Familiarize yourself with your dashboard and start creating new wishes and habits.",
+                    category: "Setup",
+                    priority: 3,
+                    isCompleted: false,
+                    userId: user.id,
+                  },
+                  {
+                    title: "Customize Your Profile",
+                    description: "Add your name, country, and time zone to personalize your experience.",
+                    category: "Profile",
+                    priority: 3,
+                    isCompleted: false,
+                    userId: user.id,
+                  },
+                  {
+                    title: "Start Your First Habit 🚀",
+                    description: "Track your first habit to stay motivated and build progress over time.",
+                    category: "Habits",
+                    priority: 1,
+                    isCompleted: false,
+                    userId: user.id,
+                  },
+                ],
+              });
+
+              // default habits
+              const now = new Date();
+              await tx.habit.createMany({
+                data: [
+                  {
+                    title: "Drink Water 💧",
+                    description: "Stay hydrated with 8 glasses of water today.",
+                    frequency: "daily",
+                    startDate: now,
+                    userId: user.id,
+                  },
+                  {
+                    title: "Take a Short Walk 🚶‍♂️",
+                    description: "Go outside for a 10 minute walk.",
+                    frequency: "daily",
+                    startDate: now,
+                    userId: user.id,
+                  },
+                  {
+                    title: "Reflect on Your Day ✍️",
+                    description: "Write one line about what went well today.",
+                    frequency: "daily",
+                    startDate: now,
+                    userId: user.id,
+                  },
+                  {
+                    title: "Plan Tomorrow’s Tasks 🗓️",
+                    description: "List your top 3 goals for tomorrow.",
+                    frequency: "daily",
+                    startDate: now,
+                    userId: user.id,
+                  },
+                ],
+              });
+
+              // mark seeded
+              await tx.user.update({
+                where: { id: user.id },
+                data: { demoSeededAt: new Date() },
+              });
+            });
+
+            // welcome email once
+            if (!existing?.welcomeEmailSent) {
+              await sendEmail({
+                to: user.email,
+                subject: "Welcome to GoFast Wish 🎉",
+                react: WelcomeEmail({ name: user.name ?? "Friend" }),
+              });
+              await db.user.update({
+                where: { id: user.id },
+                data: { welcomeEmailSent: true },
+              });
+            }
+          } catch (err) {
+            console.error("[DB Hook user.create.after] seeding failed:", err);
+          }
+        },
+      },
+    },
+  },
   hooks: {
-    after:createAuthMiddleware(async(ctx)=>{
-       
-    
-
-      const newSession = ctx.context.newSession;
-      const user = newSession?.user;
-      if (!user) return;
-       try {
-        // ✅ Create default goals for the new user
-        await db.goal.createMany({
-           data: [
-            {
-              title: "Welcome to GoFast Wish 🎉",
-              description:
-                "This is your first goal. You can edit or delete it anytime.",
-              category: "Getting Started",
-              priority: 2,
-              isCompleted: false,
-              userId: user.id,
-            },
-            {
-              title: "Explore Your Dashboard",
-              description:
-                "Familiarize yourself with your dashboard and start creating new wishes and habits.",
-              category: "Setup",
-              priority: 3,
-              isCompleted: false,
-              userId: user.id,
-            },
-            {
-              title: "Customize Your Profile",
-              description:
-                "Add your name, country, and time zone to personalize your experience.",
-              category: "Profile",
-              priority: 3,
-              isCompleted: false,
-              userId: user.id,
-            },
-            {
-              title: "Start Your First Habit 🚀",
-              description:
-                "Track your first habit to stay motivated and build progress over time.",
-              category: "Habits",
-              priority: 1,
-              isCompleted: false,
-              userId: user.id,
-            },
-          ],
-        });
-        // --- Default Habits ---
-        await db.habit.createMany({
-          data: [
-            {
-              title: "Drink Water 💧",
-              description: "Stay hydrated with 8 glasses of water today.",
-              frequency: "daily",
-              startDate: new Date(),
-              userId: user.id,
-            },
-            {
-              title: "Take a Short Walk 🚶‍♂️",
-              description: "Go outside for a 10-minute walk.",
-              frequency: "daily",
-              startDate: new Date(),
-              userId: user.id,
-            },
-            {
-              title: "Reflect on Your Day ✍️",
-              description: "Write one line about what went well today.",
-              frequency: "daily",
-              startDate: new Date(),
-              userId: user.id,
-            },
-            {
-              title: "Plan Tomorrow’s Tasks 🗓️",
-              description: "List your top 3 goals for tomorrow.",
-              frequency: "daily",
-              startDate: new Date(),
-              userId: user.id,
-            },
-          ],
-        })
-
-        
-
-        
-        await sendEmail({
-          to: user.email,
-          subject: "Welcome to GoFast Wish 🎉",
-          react: WelcomeEmail({ name: user.name }),
-        });
-      } catch (err) {
-        console.error("❌ Failed to create default data:", err);
+    // keep your other hooks if needed, but remove the seeding from here
+    after: createAuthMiddleware(async (ctx) => {
+      // do nothing here for seeding to avoid firing on session renewal
+      // you can still keep your sign up logging if you want
+      if (ctx.path.startsWith("/sign-up")) {
+        const newSession = ctx.context.newSession;
+        if (newSession) {
+          console.log("New user session created", newSession.user.id);
+        }
       }
-    })
-  }
+    }),
+  },
 });
