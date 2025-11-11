@@ -218,3 +218,27 @@
   animation: shine 2s linear infinite;
 }
 
+
+/* Firefox */
+.fancy-scroll {
+  scrollbar-width: thin;
+  scrollbar-color:var(--primary) #0f172a; /* thumb, track */
+}
+
+/* WebKit (Chrome, Edge, Safari) */
+.fancy-scroll::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.fancy-scroll::-webkit-scrollbar-track {
+  background: #0f172a;            /* track color */
+  border-radius: 9999px;
+}
+.fancy-scroll::-webkit-scrollbar-thumb {
+  background: var(--primary);           
+  border-radius: 9999px;
+  border: 2px solid #0f172a;    
+}
+.fancy-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);           
+}

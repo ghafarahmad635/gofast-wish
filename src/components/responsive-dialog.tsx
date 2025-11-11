@@ -41,7 +41,7 @@ export const ResponsiveDialog = ({
             <DrawerTitle>{title}</DrawerTitle>
             <DrawerDescription>{description}</DrawerDescription>
           </DrawerHeader>
-          <div className="p-4 overflow-auto">
+          <div className="p-4 overflow-auto fancy-scroll">
             {children}
           </div>
         </DrawerContent>
@@ -51,12 +51,14 @@ export const ResponsiveDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-card overflow-auto max-h-[95vh]">
+      <DialogContent className="bg-card ">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
-        {children}
+        <div className="overflow-auto  max-h-[80vh]"> 
+          {children}
+        </div>
       </DialogContent>
     </Dialog>
   );
