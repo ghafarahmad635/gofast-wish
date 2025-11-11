@@ -1,7 +1,7 @@
 
 'use client'
 
-import React, { useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useTRPC } from '@/trpc/client'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { ErrorState } from '@/components/error-state'
@@ -15,6 +15,7 @@ interface Props { id: string }
 export default function TravelDreamMatcherView({ id }: Props) {
   const [plans, setPlans] = useState<TravelPlans>([])  
   const [isGenerating, setIsGenerating] = useState(false)
+  const bottomRef = useRef<HTMLDivElement | null>(null);
 
   const trpc = useTRPC()
   const { data } = useSuspenseQuery(
@@ -23,6 +24,12 @@ export default function TravelDreamMatcherView({ id }: Props) {
 
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [selectedIdea, setSelectedIdea] = useState<any | null>(null)
+  // Smooth scroll whenever plans change or while generating
+  useEffect(() => {
+    if (bottomRef.current) {
+      bottomRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
+    }
+  }, [plans, isGenerating]);
 
   return (
     <>
@@ -71,6 +78,7 @@ export default function TravelDreamMatcherView({ id }: Props) {
                   }}
                 />
               ))}
+               <div ref={bottomRef} />
             </div>
           </div>
         )}

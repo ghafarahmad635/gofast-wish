@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import GenerateForm from '../components/bucket-generate-form'
 import { useTRPC } from '@/trpc/client';
 import { useSuspenseQuery } from '@tanstack/react-query';
@@ -16,14 +16,24 @@ interface Props{
 export default function BucketListView({id}:Props) {
   
   
+  
   const [ideas, setIdeas] = useState<Ideas>([]);  
   const [isGenerating, setIsGenerating] = useState(false)
+  const bottomRef = useRef<HTMLDivElement | null>(null);
+  
    const trpc = useTRPC()
     const { data } = useSuspenseQuery(trpc.addonsRouter.getOneById.queryOptions({
       id
     }));
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [selectedIdea, setSelectedIdea] = useState<any | null>(null)
+    // Smooth scroll whenever plans change or while generating
+      useEffect(() => {
+        if (bottomRef.current) {
+          bottomRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
+        }
+      }, [ideas, isGenerating]);
+    
      
   return (
     <>
@@ -76,6 +86,7 @@ export default function BucketListView({id}:Props) {
                   }}
                 />
               ))}
+               <div ref={bottomRef} />
             </div>
           </div>
         )}
