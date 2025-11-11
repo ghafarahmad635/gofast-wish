@@ -83,7 +83,7 @@ export const addonsRouter  = createTRPCRouter({
         },
       });
 
-      console.log("addon ",addon)
+   
 
       if (!addon) {
         throw new TRPCError({
