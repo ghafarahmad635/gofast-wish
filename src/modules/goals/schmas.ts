@@ -8,7 +8,7 @@ export const goalInsertSchema = z.object({
   priority: z.enum(["1", "2", "3"]).optional(),
   file: z
     .instanceof(File)
-    .refine((file) => file.size <= 4 * 1024 * 1024, "Max file size is 4MB")
+    .refine((file) => file.size <= 2 * 1024 * 1024, "Max file size is 2MB")
     .refine(
       (file) =>
         ["image/jpeg", "image/png", "image/webp", "image/jpg"].includes(file.type),
