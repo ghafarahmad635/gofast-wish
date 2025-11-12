@@ -9,7 +9,7 @@ import GenerateForm from '../components/wish-clarity-form'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { useCompletion } from '@ai-sdk/react'
-import { Copy, Plus, Square } from 'lucide-react'
+import { Copy, Plus, Sparkles, Square } from 'lucide-react'
 import type { FormValues } from '../../schema'
 
 interface Props { id: string }
@@ -100,8 +100,16 @@ export default function WishClarityCoachView({ id }: Props) {
               )}
             </div>
 
-            {isLoading && (
-              <div className="text-sm text-muted-foreground">Generating...</div>
+           {isLoading && (
+              <div className="flex items-center gap-2">
+                <div className="relative">
+                  <div className="h-8 w-8 rounded-full bg-primary/15 animate-pulse" />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Sparkles className="h-4 w-4 text-primary" />
+                  </div>
+                </div>
+                <span className="text-sm text-muted-foreground">Thinking…</span>
+              </div>
             )}
             {error && (
               <div className="text-sm text-destructive">Error: {error.message}</div>
