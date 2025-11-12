@@ -29,13 +29,13 @@ export const GoalCard: React.FC<GoalCardProps> = ({
 
   return (
     <Card
-  key={goal.id}
-  className="group relative overflow-hidden border border-gray-200 rounded-lg shadow-sm 
-             hover:shadow-lg transition-all duration-300 w-full max-w-full
-             bg-white/90 backdrop-blur-sm p-0 m-0"
->
+      key={goal.id}
+      className="group relative overflow-hidden border border-gray-200 rounded-lg shadow-sm 
+                hover:shadow-lg transition-all duration-300 w-full max-w-full
+                bg-white/90 backdrop-blur-sm p-0 m-0 gap-4"
+    >
 
-      {/* ✅ Image section (only visual difference when completed) */}
+     
       <div className="relative w-full aspect-[16/9] overflow-hidden rounded-t-lg">
         {goal.featuredImage?.url ? (
           <Image
@@ -52,7 +52,7 @@ export const GoalCard: React.FC<GoalCardProps> = ({
           </div>
         )}
 
-        {/* ✅ Completed overlay + check badge */}
+        
         {isCompleted && (
           <>
             <div className="absolute inset-0 bg-black/30 backdrop-blur-[1px]"></div>
@@ -65,8 +65,8 @@ export const GoalCard: React.FC<GoalCardProps> = ({
       </div>
 
       {/* Header */}
-      <CardHeader className="px-5 mt-3 mb-1.5">
-        <CardTitle className="text-lg font-semibold text-gray-900 group-hover:text-primary transition-colors duration-300">
+      <CardHeader className="px-5 gap-0">
+        <CardTitle className="text-lg font-semibold text-gray-900 group-hover:text-primary transition-colors duration-300 p-0">
           {goal.title}
         </CardTitle>
       </CardHeader>
