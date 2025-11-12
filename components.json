@@ -18,5 +18,8 @@
     "lib": "@/lib",
     "hooks": "@/hooks"
   },
-  "registries": {}
+  "registries": {
+    "@formcn": "https://formcn.dev/r/{name}.json",
+    "@rigidui": "https://rigidui.com/r/{name}.json"
+  }
 }
