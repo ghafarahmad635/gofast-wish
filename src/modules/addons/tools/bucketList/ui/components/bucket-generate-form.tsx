@@ -102,14 +102,14 @@ export default function GenerateForm({ onGenerate, toolID, onLoadingChange }: Pr
 
   const onSubmit = (values: GenerateInput) => {
     const combinedPrompt = `
-Generate ${values.responseCount} bucket list ideas based on:
-- Prompt: ${values.prompt}
-- Gender: ${values.gender}
-- Interests: ${values.interests.join(', ') || 'None'}
-- Budget: ${values.budget}
-- Travel Preference: ${values.travelPreference}
-- Available Time: ${values.availableTime}
-    `.trim();
+    Generate ${values.responseCount} bucket list ideas based on:
+    - Prompt: ${values.prompt}
+    - Gender: ${values.gender}
+    - Interests: ${values.interests.join(', ') || 'None'}
+    - Budget: ${values.budget}
+    - Travel Preference: ${values.travelPreference}
+    - Available Time: ${values.availableTime}
+        `.trim();
 
     submit({
       id: toolID,

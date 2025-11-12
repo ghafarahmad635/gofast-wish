@@ -1,4 +1,3 @@
-// app/api/travel-dream-matcher/route.ts
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { streamObject } from "ai";
