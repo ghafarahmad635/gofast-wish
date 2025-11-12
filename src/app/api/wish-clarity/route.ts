@@ -4,7 +4,7 @@ import { streamText } from "ai";
 export const runtime = "edge"; // optional
 
 export async function POST(req: Request) {
-  const data = await req.json(); // all fields from the form
+  const data = await req.json();
 
   // Build a clean prompt from the form data
   const {

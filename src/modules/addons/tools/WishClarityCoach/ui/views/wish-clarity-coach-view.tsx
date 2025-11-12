@@ -18,6 +18,7 @@ export default function WishClarityCoachView({ id }: Props) {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [selectedIdea, setSelectedIdea] = useState<any | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
+  const [goalTitle,setGoalTitle]=useState<string | null>('')
   const bottomRef = useRef<HTMLDivElement | null>(null)
 
   const trpc = useTRPC()
@@ -51,11 +52,12 @@ export default function WishClarityCoachView({ id }: Props) {
 
   // Open dialog with current plan
   const handleAddToWishlist = () => {
-    // Adjust these fields to match NewGoalDialog's expected shape
+    console.log("title ",goalTitle)
+    
     setSelectedIdea({
-      title: 'Wish Clarity Plan',
+      title:  goalTitle,
       description: completion || '',
-      // any other fields your dialog expects...
+      
     })
     setIsDialogOpen(true)
   }
@@ -77,7 +79,7 @@ export default function WishClarityCoachView({ id }: Props) {
         </div>
 
         {/* Form */}
-        <GenerateForm onGenerate={handleGenerate} isPending={isLoading} />
+        <GenerateForm onGenerate={handleGenerate} isPending={isLoading} setGoalTitle={setGoalTitle}/>
 
         {/* Output */}
         {(completion || isLoading || error) && (

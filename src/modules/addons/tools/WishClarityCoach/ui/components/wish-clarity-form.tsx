@@ -24,11 +24,13 @@ import {
 } from '../../schema'
 interface Props{
   isPending?:boolean
-  onGenerate: (values: FormValues) => Promise<void> | void
+  onGenerate: (values: FormValues) => Promise<void> | void,
+  setGoalTitle:(title:string)=>void
 }
 export default function GenerateForm({
   onGenerate,
-  isPending=false
+  isPending=false,
+  setGoalTitle
 }: Props) {
   const initial: Partial<FormValues> = {
     goal: '',
@@ -55,6 +57,7 @@ export default function GenerateForm({
       completeButtonText="Generate"
       onComplete={async (data) => {
         await onGenerate(data)
+        setGoalTitle(data.goal)
       }}
     >
       <Step title="Your Wish" schema={step1Schema}>
