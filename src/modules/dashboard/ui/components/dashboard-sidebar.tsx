@@ -19,6 +19,7 @@ const firstSection = [
     label: "Habits",
     href: "/habits",
   },
+
 ];
 
 const secondSection = [
@@ -66,7 +67,23 @@ const DashboardSidebar = () => {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  className={cn(
+                    "h-10 hover:bg-linear-to-r/oklch border border-transparent hover:border-[#5D6B68]/10 from-sidebar-accent from-5% via-30% via-sidebar/50 to-sidebar/50",
+                    pathname.includes("/addons") && "bg-linear-to-r/oklch border-[#5D6B68]/10"
+                  )}
+                  isActive={pathname.includes("/addons")}
+                >
+                  <Link href="/addons">
+                    <PuzzleIcon className="size-5 text-primary" />
+                    <span className="text-sm font-medium tracking-tight">Add-ons</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
              </SidebarMenu>
+             
           </SidebarGroupContent>
         </SidebarGroup>
         <div className="px-4 py-2">
@@ -93,22 +110,10 @@ const DashboardSidebar = () => {
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
+                
               ))}
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  className={cn(
-                    "h-10 hover:bg-linear-to-r/oklch border border-transparent hover:border-[#5D6B68]/10 from-sidebar-accent from-5% via-30% via-sidebar/50 to-sidebar/50",
-                    pathname.includes("/addons") && "bg-linear-to-r/oklch border-[#5D6B68]/10"
-                  )}
-                  isActive={pathname.includes("/addons")}
-                >
-                  <Link href="/addons">
-                    <PuzzleIcon className="size-5 text-primary" />
-                    <span className="text-sm font-medium tracking-tight">Add-ons</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              
+              
              </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

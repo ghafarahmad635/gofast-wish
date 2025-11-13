@@ -8,7 +8,7 @@ import DashboardUserButton from '@/modules/dashboard/ui/components/dashboard-use
 import { Home, RepeatIcon, TargetIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 const mainMenu = [
-    { label: 'Home', href: '/dashboard', icon: Home },
+    { label: 'Dashboard', href: '/dashboard', icon: Home },
     { label: 'Goals', href: '/dashboard/goals', icon: TargetIcon, },
     { label: 'Habits', href: '/dashboard/habits', icon: RepeatIcon },
     
