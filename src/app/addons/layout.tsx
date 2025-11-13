@@ -13,7 +13,7 @@ const Layout = async({ children }: Props) => {
     const defaultOpen = cookieStore.get(GOFASTWISH_SIDEBAR_KEY)?.value === "true"
    
     return(
-           <SidebarProvider defaultOpen={defaultOpen}>
+           <SidebarProvider defaultOpen={true}>
              <AddonsSidebar />
               <main className="flex flex-col min-h-screen w-full overflow-hidden bg-muted">
                 <DashboardNavbar />

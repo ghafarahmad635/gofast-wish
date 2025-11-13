@@ -197,7 +197,7 @@ enum CompletionStatus {
 
 // AI stuff 
 model AddOn {
-  id             String   @id @default(cuid())
+  id             String   @id @default(uuid())
   name           String   @unique
   slug           String   @unique
   description    String?

@@ -27,10 +27,6 @@ const DashboardPage = async({searchParams}:Props) => {
      if (!session) {
       redirect("/sign-in");
     }
-   
-  
-   
-  
   
 
   return (
@@ -45,13 +41,14 @@ const DashboardPage = async({searchParams}:Props) => {
       <GoalsViewToCompleteSection/>
      
     </article>
-    <article className="space-y-4">
-      <DashboardHabitsHeader/>
-      <DashboardHabitSection frequency={params.frequency}/>
-    </article>
+    
     <article className="space-y-4">
      <GoalsInCompleteHeader/>
       <GoalsViewCompletedSection/>
+    </article>
+    <article className="space-y-4">
+      <DashboardHabitsHeader/>
+      <DashboardHabitSection frequency={params.frequency}/>
     </article>
    </section>
    

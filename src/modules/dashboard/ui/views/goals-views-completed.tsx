@@ -3,7 +3,6 @@
 import * as React from "react"
 import Autoplay from "embla-carousel-autoplay"
 import {  useRef } from "react"
-import { useRouter } from "next/navigation"
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query"
 import { toast } from "sonner"
 
@@ -25,7 +24,6 @@ import { Card } from "@/components/ui/card"
 const GoalsViewCompleted = () => {
   const trpc = useTRPC()
   const queryClient = useQueryClient()
-  const router = useRouter()
   const plugin = useRef(Autoplay({ delay: 4000, stopOnInteraction: true }))
 
   // ✅ Fetch latest completed goals for carousel
@@ -40,7 +38,7 @@ const GoalsViewCompleted = () => {
     trpc.goals.remove.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries()
-        router.push("/dashboard/goals/completed")
+       
       },
       onError: (error) => toast.error(error.message),
     })
