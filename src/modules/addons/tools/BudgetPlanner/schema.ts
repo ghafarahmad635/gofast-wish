@@ -50,6 +50,7 @@ export const formSchema = z.object({
     hard_caps: z.string().max(300).optional(),
     notes: z.string().max(300).optional(),
   }),
+  plan_count: z.coerce.number().int().min(1).max(6).default(3),
 });
 
 export type FormValues = z.infer<typeof formSchema>;
@@ -66,4 +67,68 @@ export const initialValues: Partial<FormValues> = {
   debts: { credit_cards: [], loans: [] },
   goals: { emergency_fund_target: 0, payoff_priority: "avalanche", timeframe_months: 12 },
   prefs: {},
+   plan_count: 3,
 };
+
+
+
+
+
+// ai-schema
+
+
+export const aiBudgetCategoryPlanSchema = z.object({
+  key: z.string(),
+  label: z.string(),
+  current: z.number(),
+  recommended: z.number(),
+  difference: z.number(),
+  reasoning: z.string(),
+});
+
+export const aiDebtPlanItemSchema = z.object({
+  name: z.string(),
+  type: z.string(),
+  balance: z.number(),
+  apr: z.number(),
+  min_payment: z.number(),
+  suggested_payment: z.number(),
+  priority_order: z.number(),
+  rationale: z.string(),
+});
+
+export const aiMonthlyActionSchema = z.object({
+  title: z.string(),
+  description: z.string(),
+});
+
+export const aiBudgetPlanSchema = z.object({
+  overview: z.object({
+    total_income: z.number(),
+    total_expenses: z.number(),
+    total_debt_payments: z.number(),
+    surplus_or_deficit: z.number(),
+    plan_focus: z.string(),
+    summary: z.string(),
+  }),
+
+  categories: z.array(aiBudgetCategoryPlanSchema),
+  debts: z.array(aiDebtPlanItemSchema),
+
+  monthly_targets: z.object({
+    emergency_fund: z.number(),
+    extra_debt_payment: z.number(),
+    savings_or_investing: z.number(),
+    fun_or_flex: z.number().optional(),
+  }),
+
+  monthly_actions: z.array(aiMonthlyActionSchema),
+
+  notes: z.string(),
+});
+
+
+export const aiBudgetPlanArraySchema = z.array(aiBudgetPlanSchema);
+
+export type AIBudgetPlan = z.infer<typeof aiBudgetPlanSchema>;
+export type AIBudgetPlanList = z.infer<typeof aiBudgetPlanArraySchema>;

@@ -18,17 +18,6 @@ export const generateSchema = z.object({
 export type GenerateInput = z.infer<typeof generateSchema>
 
 
-
-// export const bucketListIdeaGeneratedSchema = z.object({
-//   ideas: z.array(
-//     z.object({
-//       title: z.string(),
-//       description: z.string(),
-//       category: z.string(),
-//     })
-//   ),
-// });
-
 export const bucketListIdeaItem = z.object({
   title: z.string(),
   category: z.string(),
