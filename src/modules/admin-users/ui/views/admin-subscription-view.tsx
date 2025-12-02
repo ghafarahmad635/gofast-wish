@@ -124,10 +124,10 @@ const AdminSubscriptionView = () => {
 
 export default AdminSubscriptionView;
 
-export const AdminSubscriptionViewLoadingState = () => {
+export const AdminUsersViewLoadingState = () => {
   return <LoadingState title="" description="" />;
 };
 
-export const AdminSubscriptionViewErrorState = () => {
+export const AdminUsersViewErrorState = () => {
   return <ErrorState title="" description="" />;
 };
