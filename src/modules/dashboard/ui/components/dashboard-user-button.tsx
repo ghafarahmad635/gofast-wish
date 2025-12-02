@@ -10,16 +10,21 @@ import { authClient } from '@/lib/auth-client.ts';
 import { ChevronDownIcon, CreditCardIcon, LogOutIcon, UserIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import React from 'react'
+import React, { useEffect } from 'react'
 import { toast } from 'sonner';
 
 const DashboardUserButton = () => {
-     const { data, isPending } = authClient.useSession();
+
+     const { data, isPending,refetch } = authClient.useSession();
      const router = useRouter();
        const isMobile = useIsMobile();
       if (isPending || !data?.user) {
     return null;
+    
   }
+  const isImpersonatedSession =
+  Boolean(data?.session?.impersonatedBy) &&
+  data.user.role !== "SUPERADMIN";
    const onLogout = () => {
     const isPending=authClient.signOut({
       fetchOptions: {
@@ -28,6 +33,18 @@ const DashboardUserButton = () => {
         }
       }
     })
+  }
+
+  const handleLogoutAsUser=async()=>{
+     const { error } = await authClient.admin.stopImpersonating();
+
+    if (error) {
+      toast.error("Failed to logout as user");
+      return;
+    }
+     refetch();
+    
+    router.push("/admin/users");
   }
   const handleBillingPortal=async()=>{
     try {
@@ -86,7 +103,17 @@ const DashboardUserButton = () => {
                         >
                         <LogOutIcon className="size-4 text-black" />
                         Logout
-                        </Button>
+                      </Button>
+                       {isImpersonatedSession && (
+                        <Button
+                        variant="outline"
+                        onClick={handleLogoutAsUser}
+                        >
+                        <LogOutIcon className="size-4 text-black" />
+                        Logout as User
+                      </Button>
+                       )}
+                      
                     
                 </DrawerFooter>
              </DrawerContent>
@@ -151,6 +178,17 @@ const DashboardUserButton = () => {
           Logout
           <LogOutIcon className="size-4" />
         </DropdownMenuItem>
+        {isImpersonatedSession && (
+          <DropdownMenuItem
+          onClick={handleLogoutAsUser}
+          disabled={isPending}
+          className="cursor-pointer flex items-center justify-between"
+        >
+          Logout as User 
+          <LogOutIcon className="size-4" />
+        </DropdownMenuItem>
+        )}
+        
     </DropdownMenuContent>
     </DropdownMenu>
   )

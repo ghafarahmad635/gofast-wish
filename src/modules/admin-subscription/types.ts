@@ -7,19 +7,14 @@ export enum UserBanStatus {
   Banned = "banned",
  
 };
-export enum UserRole {
-  User = "USER",
-  SuperAdmin = "SUPERADMIN",
- 
-};
-
-
-export enum UserLoginStatus {
-  Online = "online",
-  Offline = "offline",
+// Subscription plan
+export enum SubscriptionPlan {
+  STANDARD = "standard",
+  PRO = "pro",
 }
 
-export enum UserEmailStatus {
-  Verified = "verified",
-  NotVerified = "not_verified",
+// Subscription status
+export enum SubscriptionStatus {
+  INCOMPLETE = "incomplete",
+  ACTIVE = "active",
 }

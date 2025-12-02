@@ -64,11 +64,12 @@ export const auth = betterAuth({
     },
   },
 
-  // ✅ All Stripe functionality MUST be inside the stripe() plugin
+  
   plugins: [
     adminPlugin({
       adminRoles: ["SUPERADMIN"],
       defaultRole: "USER",
+      adminUserIds: ["Xz9s3mfeZqteJvBNe9QEfcemO9XaIMlr"],
       bannedUserMessage:
         "You have been banned from this application. Please contact support.",
       impersonationSessionDuration: 60 * 60 * 24, // 1 day
@@ -111,10 +112,35 @@ export const auth = betterAuth({
           })
           if (!user) return
 
-          const subscriptionId =
-            typeof (invoice as any).subscription === "string"
-              ? (invoice as any).subscription
-              : null
+           // 2) Get subscriptionId using the NEW Stripe invoice format only
+          let subscriptionId: string | null = null;
+
+          // Preferred: parent.subscription_details.subscription
+          const parent: any = (invoice as any).parent;
+          if (parent?.type === "subscription_details") {
+            subscriptionId = parent.subscription_details?.subscription ?? null;
+          }
+
+          // Fallback: first line item parent.subscription_item_details.subscription
+          if (!subscriptionId) {
+            for (const line of invoice.lines.data as any[]) {
+              const subFromLine =
+                line?.parent?.subscription_item_details?.subscription;
+              if (subFromLine) {
+                subscriptionId = subFromLine;
+                break;
+              }
+            }
+          }
+
+          // At this point subscriptionId is either "sub_..." or null
+          // You can decide if you want to require it or allow null
+          if (!subscriptionId) {
+            console.warn(
+              "[Stripe:onEvent] invoice.paid: no subscription id found on invoice",
+              invoice.id,
+            );
+          }
 
           await db.order.create({
             data: {
