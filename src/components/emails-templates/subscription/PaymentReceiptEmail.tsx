@@ -10,7 +10,7 @@ interface PaymentReceiptEmailProps {
 export function PaymentReceiptEmail({ name, amount, date, invoiceUrl }: PaymentReceiptEmailProps) {
   return (
     <Html>
-      <Head />
+      <Head />   
       <Tailwind>
         <Body className="bg-gray-50 font-sans text-gray-900">
           <Container className="bg-white max-w-lg mx-auto my-10 p-8 rounded-xl shadow">
