@@ -6,6 +6,7 @@ import { authRouter } from '@/modules/auth/server/procedures';
 import { addonsRouter } from '@/modules/addons/server/procedures';
 import { adminUsers } from '@/modules/admin-users/server/procedures';
 import { adminSubscriptions } from '@/modules/admin-subscription/server/procedures';
+import { adminOrders } from '@/modules/admin-orders/server/procedures';
 
 export const appRouter = createTRPCRouter({
  goals:goalsRouter,
@@ -13,7 +14,8 @@ export const appRouter = createTRPCRouter({
  auth:authRouter,
  addonsRouter:addonsRouter,
  adminUsers:adminUsers,
- adminSubscriptions:adminSubscriptions
+ adminSubscriptions:adminSubscriptions,
+ adminOrders:adminOrders,
 
 });
 

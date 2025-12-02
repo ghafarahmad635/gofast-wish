@@ -1,6 +1,6 @@
 import { loadSearchParams } from '@/modules/admin-users/params';
 import UserFilters from '@/modules/admin-users/ui/components/user-filters';
-import AdminUsersView, { AdminUsersViewErrorState, AdminUsersViewLoadingState } from '@/modules/admin-users/ui/views/admin-users-view';
+import AdminUsersView, { AdminUsersViewErrorState, AdminUsersViewLoadingState } from '@/modules/admin-users/ui/views/admin-subscription-view';
 import { getQueryClient, trpc } from '@/trpc/server';
 import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
 import { SearchParams } from 'nuqs/server';
