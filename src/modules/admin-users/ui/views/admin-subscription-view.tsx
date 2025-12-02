@@ -15,7 +15,7 @@ import { createUserColumns, UserRow } from "../components/columns";
 import { BanUserDialog } from "../components/BanUserDialog";
 import { ViewUserDialog } from "../components/view-user-dialog";
 
-const AdminUsersView = () => {
+const AdminSubscriptionView = () => {
   const [filters, setFilters] = useUsersAdminFilters();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
@@ -122,12 +122,12 @@ const AdminUsersView = () => {
   );
 };
 
-export default AdminUsersView;
+export default AdminSubscriptionView;
 
-export const AdminUsersViewLoadingState = () => {
+export const AdminSubscriptionViewLoadingState = () => {
   return <LoadingState title="" description="" />;
 };
 
-export const AdminUsersViewErrorState = () => {
+export const AdminSubscriptionViewErrorState = () => {
   return <ErrorState title="" description="" />;
 };
