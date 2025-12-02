@@ -6,38 +6,42 @@ import { LoadingState } from "@/components/loading-state";
 import { useTRPC } from "@/trpc/client";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import React from "react";
-import { columns } from "../components/columns";
-import { useUsersAdminFilters } from "../../hooks/use-admin-users";
+
 import { DataPagination } from "@/components/DataPagination";
+import { subscriptionColumns } from "../components/columns";
+import { useSubscriptionAdminFilters } from "../../hooks/use-admin-subscription";
 
 
 
-const AdminUsersView = () => {
-    const [filters, setFilters] = useUsersAdminFilters();
+
+const AdminSubscriptionsView = () => {
+  const [filters, setFilters ] = useSubscriptionAdminFilters();
+
   const trpc = useTRPC();
   const { data } = useSuspenseQuery(
-    trpc.adminUsers.getMany.queryOptions({...filters}),
+    trpc.adminSubscriptions.getMany.queryOptions({...filters}),
   );
     
 
   return (
     <div className="flex-1 pb-4  flex flex-col gap-y-4 flex-grow">
-      <DataTable data={data.items} columns={columns} />
-      <DataPagination 
-         page={filters.page}
+     
+    <DataTable data={data.items} columns={subscriptionColumns} />
+     <DataPagination 
+        page={filters.page}
         totalPages={data.totalPages}
         onPageChange={(page) => setFilters({ page })}
-       />
+       /> 
     </div>
   );
 };
 
-export default AdminUsersView;
+export default AdminSubscriptionsView;
 
-export const AdminUsersViewLoadingState = () => {
+export const AdminSubscriptionsViewLoadingState = () => {
   return <LoadingState title="" description="" />;
 };
 
-export const AdminUsersViewErrorState = () => {
+export const AdminSubscriptionsViewErrorState = () => {
   return <ErrorState title="" description="" />;
 };

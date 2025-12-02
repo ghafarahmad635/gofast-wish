@@ -100,7 +100,7 @@ const UserFilters = () => {
               })
             }
           >
-            <SelectTrigger className="w-[150px] bg-white">
+            <SelectTrigger className="w-[130px] bg-white">
               <SelectValue placeholder="Ban status" />
             </SelectTrigger>
             <SelectContent>
@@ -122,7 +122,7 @@ const UserFilters = () => {
               })
             }
           >
-            <SelectTrigger className="w-[150px] bg-white">
+            <SelectTrigger className="w-[130px] bg-white">
               <SelectValue placeholder="Login status" />
             </SelectTrigger>
             <SelectContent>
@@ -144,7 +144,7 @@ const UserFilters = () => {
               })
             }
           >
-            <SelectTrigger className="w-[170px] bg-white">
+            <SelectTrigger className="w-[130px] bg-white">
               <SelectValue placeholder="Email status" />
             </SelectTrigger>
             <SelectContent>
