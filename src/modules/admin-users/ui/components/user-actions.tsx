@@ -22,6 +22,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { authClient } from "@/lib/auth-client.ts";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+
 
 type UserActionsProps = {
   userId: string;
@@ -29,6 +33,8 @@ type UserActionsProps = {
   email: string;
   role: string;
   banned: boolean | null;
+   onBanClick?: () => void; 
+    onViewDetailsClick?: () => void;
 };
 
 const UserActions: React.FC<UserActionsProps> = ({
@@ -37,29 +43,45 @@ const UserActions: React.FC<UserActionsProps> = ({
   email,
   role,
   banned,
+  onBanClick,
+  onViewDetailsClick
 }) => {
   const isMobile = useIsMobile();
+  const router = useRouter();
 
-  const isSuperAdmin = role === "SUPERADMIN";
   const isBanned = banned;
+const { refetch } = authClient.useSession();
+const handleViewDetails = () => {
+  if (onViewDetailsClick) {
+    onViewDetailsClick();
+    return;
+  }
+  
+};
 
-  const handleViewDetails = () => {
-    console.log("View details", userId);
-    // later: open drawer/modal, route, etc.
-  };
-
-  const handleToggleRole = () => {
-    console.log(
-      isSuperAdmin ? "Set role USER" : "Set role SUPERADMIN",
+ 
+  const handleImpersonate=async ()=>{
+     const { error } = await authClient.admin.impersonateUser({
       userId,
-    );
-    // later: call API here
-  };
+      
+    });
+    if (error) {
+      toast.error("Failed to impersonate user: " + error.message);
+      return
+    }
+    refetch();
+     router.push("/dashboard");
+  }
 
-  const handleToggleBan = () => {
-    console.log(isBanned ? "Unban user" : "Ban user", userId);
-    // later: call API here
-  };
+const handleToggleBan = () => {
+  if (onBanClick) {
+    onBanClick(); // open dialog in root; dialog will know if it's ban or unban from user.banned
+    return;
+  }
+
+  console.log(isBanned ? "Unban user" : "Ban user", userId);
+};
+
 
   if (isMobile) {
     // MOBILE: use drawer
@@ -93,18 +115,12 @@ const UserActions: React.FC<UserActionsProps> = ({
              <Button
               variant="outline"
               className="w-full justify-start"
-              onClick={handleViewDetails}
+              onClick={handleImpersonate}
             >
              Login as User
             </Button>
 
-            <Button
-              variant="outline"
-              className="w-full justify-start"
-              onClick={handleToggleRole}
-            >
-              {isSuperAdmin ? "Set as USER" : "Set as SUPERADMIN"}
-            </Button>
+            
 
             <Button
               variant={isBanned ? "outline" : "destructive"}
@@ -138,12 +154,10 @@ const UserActions: React.FC<UserActionsProps> = ({
         <DropdownMenuItem onClick={handleViewDetails}>
           View details
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={handleViewDetails}>
+        <DropdownMenuItem onClick={handleImpersonate}>
           Login as user
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={handleToggleRole}>
-          {isSuperAdmin ? "Set as USER" : "Set as SUPERADMIN"}
-        </DropdownMenuItem>
+        
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={handleToggleBan}

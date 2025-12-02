@@ -9,7 +9,7 @@ import React from "react";
 
 import { DataPagination } from "@/components/DataPagination";
 import { subscriptionColumns } from "../components/columns";
-import { useSubscriptionAdminFilters } from "../../hooks/use-admin-users";
+import { useSubscriptionAdminFilters } from "../../hooks/use-admin-subscription";
 
 
 
@@ -28,7 +28,7 @@ const AdminSubscriptionsView = () => {
      
     <DataTable data={data.items} columns={subscriptionColumns} />
      <DataPagination 
-         page={filters.page}
+        page={filters.page}
         totalPages={data.totalPages}
         onPageChange={(page) => setFilters({ page })}
        /> 

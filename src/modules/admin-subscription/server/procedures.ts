@@ -16,20 +16,75 @@ export const adminSubscriptions = createTRPCRouter({
           .number()
           .min(MIN_PAGE_SIZE)
           .max(MAX_PAGE_SIZE)
-          .default(2),
+          .default(DEFAULT_PAGE_SIZE),
+
+        // filters
+        search: z.string().trim().optional().default(""),
+        plan: z
+          .enum(["free", "standard", "pro"])
+          .nullish(), // allow undefined or null
+        status: z
+          .enum(["incomplete", "active"])
+          .nullish(),
       }),
     )
     .query(async ({ ctx, input }) => {
-      const { page, pageSize } = input;
+      const { page, pageSize, search, plan, status } = input;
 
-      // 1) Fetch subscriptions for this page + total count
+      // base where for subscription
+      const where: any = {};
+
+      if (plan) {
+        where.plan = plan;
+      }
+
+      if (status) {
+        where.status = status;
+      }
+
+      // if search is provided, filter by user name/email via stripeCustomerId linkage
+      if (search && search.length > 0) {
+        const matchedUsers = await ctx.db.user.findMany({
+          where: {
+            OR: [
+              { email: { contains: search, mode: "insensitive" } },
+              { name: { contains: search, mode: "insensitive" } },
+            ],
+          },
+          select: {
+            stripeCustomerId: true,
+          },
+        });
+
+        const matchedCustomerIds = matchedUsers
+          .map((u) => u.stripeCustomerId)
+          .filter((id): id is string => Boolean(id));
+
+        // if no users match search → no subscriptions
+        if (matchedCustomerIds.length === 0) {
+          return {
+            items: [],
+            total: 0,
+            totalPages: 1,
+            page,
+            pageSize,
+          };
+        }
+
+        where.stripeCustomerId = {
+          in: matchedCustomerIds,
+        };
+      }
+
+      // 1) Fetch subscriptions with filters + total count with same filters
       const [subscriptions, total] = await Promise.all([
         ctx.db.subscription.findMany({
+          where,
           orderBy: { createdAt: "desc" },
           skip: (page - 1) * pageSize,
           take: pageSize,
         }),
-        ctx.db.subscription.count(),
+        ctx.db.subscription.count({ where }),
       ]);
 
       // 2) Collect stripeCustomerIds from these subscriptions

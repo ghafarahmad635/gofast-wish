@@ -1,4 +1,5 @@
 import { loadSearchParams } from "@/modules/admin-subscription/params";
+import SubscriptionFilters from "@/modules/admin-subscription/ui/components/subscription-filters";
 import AdminSubscriptionsView, { AdminSubscriptionsViewErrorState, AdminSubscriptionsViewLoadingState } from "@/modules/admin-subscription/ui/views/admin-subscription-view";
 import { getQueryClient, trpc } from "@/trpc/server";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query"
@@ -16,7 +17,7 @@ const page = async({ searchParams }: Props) => {
   return (
     <>
     <article className="p-4 gap-y-2 flex-grow flex flex-col">
-      {/* <SubscriptionsFilters/> */}
+      <SubscriptionFilters/>
      <HydrationBoundary state={dehydrate(queryClient)}>
         <Suspense fallback={<AdminSubscriptionsViewLoadingState />}>
           <ErrorBoundary fallback={<AdminSubscriptionsViewErrorState />}>

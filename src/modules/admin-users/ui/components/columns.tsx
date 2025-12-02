@@ -1,3 +1,4 @@
+// ../components/columns.ts
 "use client";
 
 import { format } from "date-fns";
@@ -19,9 +20,16 @@ import { GetManyUser } from "../../types";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import UserActions from "./user-actions";
 
-type UserRow = GetManyUser[number];
+export type UserRow = GetManyUser[number];
 
-export const columns: ColumnDef<UserRow>[] = [
+type CreateColumnsOptions = {
+  onBanClick: (user: UserRow) => void;
+  onViewDetailsClick: (user: UserRow) => void;
+};
+
+export const createUserColumns = (
+  options: CreateColumnsOptions
+): ColumnDef<UserRow>[] => [
   {
     accessorKey: "name",
     header: "User",
@@ -57,7 +65,6 @@ export const columns: ColumnDef<UserRow>[] = [
     header: "Role",
     cell: ({ row }) => {
       const role = row.original.role;
-
       const isSuperAdmin = role === "SUPERADMIN";
 
       return (
@@ -179,57 +186,55 @@ export const columns: ColumnDef<UserRow>[] = [
     enableHiding: true,
     cell: ({ row }) => {
       const user = row.original;
-     
-
-     
 
       return (
         <div className="flex justify-center cursor-pointer">
-            <UserActions
-                userId={user.id}
-                name={user.name}
-                email={user.email}
-                role={user.role}
-                banned={user.banned}
-                />
-          
+          <UserActions
+            userId={user.id}
+            name={user.name}
+            email={user.email}
+            role={user.role}
+            banned={user.banned}
+            onBanClick={() => options.onBanClick(user)}
+            onViewDetailsClick={() => options.onViewDetailsClick(user)}
+          />
         </div>
       );
     },
   },
   {
-  accessorKey: "subscription",
-  header: "Plan",
-  cell: ({ row }) => {
-    const sub = row.original.subscription as
-      | {
-          plan: string | null;
-          status: string | null;
-        }
-      | null;
+    accessorKey: "subscription",
+    header: "Plan",
+    cell: ({ row }) => {
+      const sub = row.original.subscription as
+        | {
+            plan: string | null;
+            status: string | null;
+          }
+        | null;
 
-    const hasPlan = !!sub;
-    const planLabel = sub?.plan ?? "Free mode";
-    const statusLabel = sub?.status ?? "none";
+      const hasPlan = !!sub;
+      const planLabel = sub?.plan ?? "Free mode";
+      const statusLabel = sub?.status ?? "none";
 
-    return (
-      <div className="flex flex-col">
-        <span
-          className={cn(
-            "text-xs font-semibold",
-            hasPlan ? "text-emerald-700" : "text-slate-700",
-          )}
-        >
-          {planLabel}
-        </span>
-
-        {hasPlan && (
-          <span className="text-[11px] text-muted-foreground capitalize">
-            {statusLabel}
+      return (
+        <div className="flex flex-col">
+          <span
+            className={cn(
+              "text-xs font-semibold",
+              hasPlan ? "text-emerald-700" : "text-slate-700",
+            )}
+          >
+            {planLabel}
           </span>
-        )}
-      </div>
-    );
+
+          {hasPlan && (
+            <span className="text-[11px] text-muted-foreground capitalize">
+              {statusLabel}
+            </span>
+          )}
+        </div>
+      );
+    },
   },
-},
 ];
