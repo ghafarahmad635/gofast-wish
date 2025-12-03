@@ -157,7 +157,8 @@ model Media {
   uploadedAt DateTime @default(now())
   uploadedBy String?
   user       User?    @relation(fields: [uploadedBy], references: [id])
-  goals      Goal[]   @relation("GoalFeaturedImage") // reverse relation
+  goals      Goal[]   @relation("GoalFeaturedImage")
+  addons  AddOn[]  @relation("AddOnIcon") 
 }
 
 
@@ -202,13 +203,16 @@ model AddOn {
   slug           String   @unique
   description    String?
   url            String?
-  icon           String?
   category       String?
   isEnabled      Boolean  @default(true)
   isPremium      Boolean  @default(false)
   systemPrompt   String?  
   customPrompt   String?  
   defaultCount   Int?     
+
+  iconId         String?
+  icon           Media?   @relation("AddOnIcon", fields: [iconId], references: [id], onDelete: SetNull)
+
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }

@@ -26,16 +26,22 @@ export const addonsRouter  = createTRPCRouter({
         orderBy: {
           createdAt: "desc", // newest first
         },
+       
         select: {
           id: true,
           name: true,
           slug: true,
           description: true,
-          icon: true,
           category: true,
           url: true,
           isPremium: true,
+           icon: {
+            select: {
+              url: true,
+            },
+          },
         },
+        
       });
 
       // ✅ Handle empty state gracefully

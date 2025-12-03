@@ -1,7 +1,12 @@
 'use client'
 
 import Link from 'next/link'
-import { SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar'
+import Image from 'next/image'
+import {
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+} from '@/components/ui/sidebar'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { useTRPC } from '@/trpc/client'
@@ -12,8 +17,9 @@ export default function AddonMenuView() {
   const pathname = usePathname()
   const trpc = useTRPC()
 
-  // ✅ Suspense-safe data fetching
-  const { data: addons } = useSuspenseQuery(trpc.addonsRouter.getMany.queryOptions())
+  const { data: addons } = useSuspenseQuery(
+    trpc.addonsRouter.getMany.queryOptions()
+  )
 
   return (
     <SidebarMenu>
@@ -28,13 +34,22 @@ export default function AddonMenuView() {
             )}
             isActive={pathname.includes(addon.url ?? '')}
           >
-            <Link href={`${addon.url}/${addon.id}`}>
-              {addon.icon && (
-                <span className="text-primary flex items-center justify-center size-5">
-                  {/* If using Lucide icon names stored as strings */}
-                  <i className={`lucide lucide-${addon.icon.toLowerCase()}`} />
+            <Link
+              href={`${addon.url}/${addon.id}`}
+              className="flex items-center gap-2"
+            >
+              {addon.icon?.url && (
+                <span className="flex items-center justify-center h-7 w-7 rounded-full overflow-hidden bg-sidebar-accent/40">
+                  <Image
+                    src={addon.icon.url}
+                    alt={`${addon.name} icon`}
+                    width={28}
+                    height={28}
+                    className="h-full w-full object-cover"
+                  />
                 </span>
               )}
+
               <span className="text-sm font-medium tracking-tight">
                 {addon.name}
               </span>
@@ -63,7 +78,7 @@ export const AddonsMenuViewErrorState = () => {
   return (
     <div className="flex flex-col items-center justify-center text-red-500 gap-2 p-4">
       <AlertTriangle className="size-5" />
-      <span className="text-sm font-medium">Failed to load add-ons</span>
+      <span className="text-sm font-medium">Failed to load add ons</span>
     </div>
   )
 }

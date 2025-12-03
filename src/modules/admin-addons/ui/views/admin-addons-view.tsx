@@ -111,6 +111,7 @@ const AdminAddonsView = () => {
         name: values.name.trim(),
         description: values.description?.trim() || null,
         isPremium: values.isPremium,
+        iconId: values.iconId || null,
       });
 
       setEditMetaOpen(false);

@@ -6,8 +6,10 @@ import {
 } from "@/constants";
 import { adminProtectedProcedure, createTRPCRouter } from "@/trpc/init";
 import { Prisma } from "@prisma/client";
+import { TRPCError } from "@trpc/server";
+import { UTApi } from "uploadthing/server";
 import z from "zod";
-
+const utapi = new UTApi();
 export const adminAddons = createTRPCRouter({
   getMany: adminProtectedProcedure
     .input(
@@ -42,6 +44,7 @@ export const adminAddons = createTRPCRouter({
           orderBy: { createdAt: "desc" },
           skip: (page - 1) * pageSize,
           take: pageSize,
+            include: { icon: { select: { url: true } } },
         }),
         ctx.db.addOn.count({ where }),
       ]);
@@ -72,30 +75,7 @@ export const adminAddons = createTRPCRouter({
         data: { isEnabled },
       });
     }),
-     updateMeta: adminProtectedProcedure
-    .input(
-      z.object({
-        id: z.string(),
-        name: z.string().min(1),
-       
-        description: z.string().optional().nullable(),
-       
-    
-        isPremium: z.boolean(),
-      }),
-    )
-    .mutation(async ({ ctx, input }) => {
-      const { id, ...rest } = input;
-
-      return ctx.db.addOn.update({
-        where: { id },
-        data: {
-          ...rest,
-          description: rest.description?.trim() || null,
-         
-        },
-      });
-    }),
+     
 
   // update prompts only
   updatePrompts: adminProtectedProcedure
@@ -119,4 +99,98 @@ export const adminAddons = createTRPCRouter({
         },
       });
     }),
+     getOne: adminProtectedProcedure
+        .input(z.object({ id: z.string() }))
+        .query(async ({ input,ctx }) => {
+          return await ctx.db.addOn.findUnique({
+            where: { id: input.id },
+            include: { 
+               icon: {
+              select: { url: true },
+            },
+             },
+          });
+        }),
+  updateMeta: adminProtectedProcedure
+  .input(
+    z.object({
+      id: z.string(),
+      name: z.string().min(1),
+      description: z.string().optional().nullable(),
+      isPremium: z.boolean(),
+      iconId: z.string().optional().nullable(), // NEW
+    }),
+  )
+  .mutation(async ({ ctx, input }) => {
+    const { id, name, description, isPremium, iconId } = input;
+
+    // Step 1: Fetch existing addon with its icon
+    const existingAddon = await ctx.db.addOn.findUnique({
+      where: { id },
+      include: { icon: true },
+    });
+
+    if (!existingAddon) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Addon not found.",
+      });
+    }
+
+    let finalIconId: string | null | undefined = existingAddon.iconId;
+
+    // Step 2: Case (a) → New iconId (replace old one)
+    if (iconId && iconId !== existingAddon.iconId) {
+      // Delete old UploadThing file + Media row
+      if (existingAddon.icon) {
+        const oldUrl = existingAddon.icon.url;
+        const key = oldUrl?.split("/f/")[1];
+
+        if (key) {
+          try {
+            await utapi.deleteFiles(key);
+          } catch (err) {
+            console.warn("⚠️ Failed to delete old addon icon file:", err);
+          }
+        }
+
+        await ctx.db.media.delete({ where: { id: existingAddon.icon.id } });
+      }
+
+      finalIconId = iconId;
+    }
+
+    // Step 3: Case (b) → User removed icon entirely (no new one)
+    if (!iconId && existingAddon.iconId) {
+      if (existingAddon.icon?.url) {
+        const key = existingAddon.icon.url.split("/f/")[1];
+        if (key) {
+          try {
+            await utapi.deleteFiles(key);
+          } catch (err) {
+            console.warn("⚠️ Failed to delete old addon icon file:", err);
+          }
+        }
+      }
+
+      await ctx.db.media.delete({ where: { id: existingAddon.iconId } });
+      finalIconId = null;
+    }
+
+    // Step 4: Update addon record
+    const updatedAddon = await ctx.db.addOn.update({
+      where: { id },
+      data: {
+        name,
+        description: description?.trim() || null,
+        isPremium,
+        iconId: finalIconId ?? null,
+      },
+      include: {
+        icon: { select: { url: true } },
+      },
+    });
+
+    return updatedAddon;
+  }),
 });

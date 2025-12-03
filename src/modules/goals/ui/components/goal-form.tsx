@@ -115,7 +115,7 @@ const GoalForm = ({ onSuccess, onCancel, initialValues }: GoalFormProps) => {
     }
 
     setIsUploading(false);
-    console.log("Featured Image ID:", featuredImageId);
+  
 
     const payload = {
       title: values.title,
