@@ -2,7 +2,7 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { GOFASTWISH_SIDEBAR_KEY } from "@/modules/dashboard/constant";
 import { DashboardNavbar } from "@/modules/dashboard/ui/components/dashboard-navbar";
 import DashboardSidebar from "@/modules/dashboard/ui/components/dashboard-sidebar";
-import { tree } from "next/dist/build/templates/app-page";
+
 import { cookies } from "next/headers";
 
 interface Props {
