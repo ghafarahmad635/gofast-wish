@@ -31,7 +31,7 @@ export const NewGoalDialog = ({
          initialValues={{
             title: defaultValues?.title ?? '',
             description: defaultValues?.description ?? '',
-            category: defaultValues?.category ?? '',
+            
           }}
       />
     </ResponsiveDialog>

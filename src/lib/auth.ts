@@ -356,7 +356,7 @@ export const auth = betterAuth({
                   {
                     title: "Welcome to GoFast Wish 🎉",
                     description: "This is your first goal. You can edit or delete it anytime.",
-                    category: "Getting Started",
+                    
                     priority: 2,
                     isCompleted: false,
                     userId: user.id,
@@ -364,7 +364,7 @@ export const auth = betterAuth({
                   {
                     title: "Explore Your Dashboard",
                     description: "Familiarize yourself with your dashboard and start creating new wishes and habits.",
-                    category: "Setup",
+                    
                     priority: 3,
                     isCompleted: false,
                     userId: user.id,
@@ -372,7 +372,7 @@ export const auth = betterAuth({
                   {
                     title: "Customize Your Profile",
                     description: "Add your name, country, and time zone to personalize your experience.",
-                    category: "Profile",
+                    
                     priority: 3,
                     isCompleted: false,
                     userId: user.id,
@@ -380,7 +380,7 @@ export const auth = betterAuth({
                   {
                     title: "Start Your First Habit 🚀",
                     description: "Track your first habit to stay motivated and build progress over time.",
-                    category: "Habits",
+                   
                     priority: 1,
                     isCompleted: false,
                     userId: user.id,

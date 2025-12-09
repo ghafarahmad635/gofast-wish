@@ -158,7 +158,7 @@ const GoalsGridViews = () => {
       <GoalForm 
        onSuccess={closeDialog}
        onCancel={closeDialog}
-      initialValues={goalDetails} />
+       initialValues={goalDetails} />
     </ResponsiveDialog>
       <ConfirmDialog />
 
