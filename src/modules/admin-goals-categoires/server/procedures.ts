@@ -4,7 +4,8 @@ import {
   MAX_PAGE_SIZE,
   MIN_PAGE_SIZE,
 } from "@/constants";
-import { adminProtectedProcedure, createTRPCRouter } from "@/trpc/init";
+import { db } from "@/lib/prisma";
+import { adminProtectedProcedure, createTRPCRouter, protectedProcedure } from "@/trpc/init";
 import { Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import z from "zod";
@@ -17,7 +18,7 @@ const slugify = (value: string) =>
     .replace(/\s+/g, "-");
 
 export const adminGoalsCategories = createTRPCRouter({
-  getMany: adminProtectedProcedure
+  getMany: protectedProcedure
     .input(
       z.object({
         page: z.number().min(1).default(DEFAULT_PAGE),
@@ -44,13 +45,13 @@ export const adminGoalsCategories = createTRPCRouter({
           : {};
 
       const [categories, total] = await Promise.all([
-        ctx.db.goalCategory.findMany({
+        db.goalCategory.findMany({
           where,
           orderBy: { createdAt: "desc" },
           skip: (page - 1) * pageSize,
           take: pageSize,
         }),
-        ctx.db.goalCategory.count({ where }),
+        db.goalCategory.count({ where }),
       ]);
 
       const totalPages = Math.max(1, Math.ceil(total / pageSize));
