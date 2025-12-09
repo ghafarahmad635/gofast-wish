@@ -5,9 +5,10 @@ import { Card, CardHeader, CardContent, CardTitle, CardFooter } from "@/componen
 import { Button } from "@/components/ui/button"
 import { Tag, Calendar, AlertCircle, Check, Edit2, Trash2, Loader2 } from "lucide-react"
 import React from "react"
+import { GoalGetOne } from "../../types"
 
 interface GoalCardProps {
-  goal: any
+  goal: GoalGetOne
   onEdit?: (id: string) => void
   onDelete?: (id: string) => void
   onToggleComplete?: (id: string) => void
@@ -79,7 +80,7 @@ export const GoalCard: React.FC<GoalCardProps> = ({
           <div className="flex items-center gap-1">
             <Tag className="w-3.5 h-3.5 text-gray-400" />
             <span className="capitalize">
-              {goal.category || "Uncategorized"}
+              {goal.category?.name || "Uncategorized"}
             </span>
           </div>
 

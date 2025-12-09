@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { useTRPC } from "@/trpc/client";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { GoalInsertSchema, goalInsertSchema } from "../../schmas";
@@ -24,16 +24,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { categories } from "../../constants";
 import FeaturedImageUpload from "./FeaturedImageUpload";
 import { uploadFiles } from "@/lib/utils/uploadthingClient";
 import { useState } from "react";
 import { GoalGetOne } from "../../types";
+import { CommandSelect } from "@/components/command-select";
 
 interface GoalFormProps {
   onSuccess?: () => void;
   onCancel?: () => void;
- initialValues?: Partial<GoalGetOne>
+ initialValues?: Partial<GoalGetOne> | null
 }
 
 const GoalForm = ({ onSuccess, onCancel, initialValues }: GoalFormProps) => {
@@ -41,13 +41,22 @@ const GoalForm = ({ onSuccess, onCancel, initialValues }: GoalFormProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const isEdit = !!initialValues?.id;
   const queryClient = useQueryClient();
+   const [categorySearch, setCategorySearch] = useState("");
+
+   const categories = useQuery(
+    trpc.adminGoalsCategories.getMany.queryOptions({
+      pageSize: 100,
+      search: categorySearch,
+    }),
+  );
+const isCategoriesLoading = categories.isPending || categories.isFetching;
 
   const form = useForm<GoalInsertSchema>({
     resolver: zodResolver(goalInsertSchema),
     defaultValues: {
       title: initialValues?.title ?? "",
       description: initialValues?.description ?? "",
-      category: initialValues?.category ?? "",
+      categoryId: initialValues?.category?.id ?? "",
       targetDate: initialValues?.targetDate
         ? new Date(initialValues.targetDate).toISOString()
         : undefined,
@@ -120,7 +129,7 @@ const GoalForm = ({ onSuccess, onCancel, initialValues }: GoalFormProps) => {
     const payload = {
       title: values.title,
       description: values.description,
-      category: values.category,
+      categoryId: values.categoryId,
       targetDate: values.targetDate,
       priority: values.priority,
       featuredImageId, // may be undefined or new ID
@@ -175,22 +184,29 @@ const GoalForm = ({ onSuccess, onCancel, initialValues }: GoalFormProps) => {
 
         <FormField
           control={form.control}
-          name="category"
+          name="categoryId"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Category</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
-                <SelectTrigger className="bg-white w-full">
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((cat) => (
-                    <SelectItem key={cat.value} value={cat.value}>
-                      {cat.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <FormControl>
+                  <CommandSelect
+                    options={(categories.data?.items ?? []).map((category) => ({
+                      id: category.id,
+                      value: category.id,
+                      children: (
+                        <div className="flex items-center gap-x-2">
+                         
+                          <span>{category.name}</span>
+                        </div>
+                      )
+                    }))}
+                    onSelect={field.onChange}
+                    onSearch={setCategorySearch}
+                    value={field.value}
+                    placeholder="Select an Category"
+                    isLoading={isCategoriesLoading}
+                  />
+                </FormControl>
               <FormMessage />
             </FormItem>
           )}

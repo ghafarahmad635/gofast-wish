@@ -124,27 +124,42 @@ model Order {
   createdAt             DateTime @default(now())
 }
 
+model GoalCategory {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  goals       Goal[]
+}
 
 
 
 model Goal {
   id          String    @id @default(cuid())
   title       String
-  category    String?
   description String?
   targetDate  DateTime?
   isCompleted Boolean   @default(false)
   priority    Int?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+
   userId      String
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // category relation
+  categoryId  String?
+  category    GoalCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
 
   featuredImageId String?
   featuredImage   Media?  @relation("GoalFeaturedImage", fields: [featuredImageId], references: [id], onDelete: SetNull)
 
   @@map("goals")
 }
+
 
 model Media {
   id         String   @id @default(cuid())
