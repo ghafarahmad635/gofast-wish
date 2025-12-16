@@ -1,40 +1,42 @@
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { createUploadthing, type FileRouter } from "uploadthing/next";
-import { UploadThingError } from "uploadthing/server";
+import { UploadThingError, UTApi } from "uploadthing/server";
 import { db } from "@/lib/prisma";
 
 const f = createUploadthing();
+const utapi = new UTApi();
 
 const getUser = async () => {
   try {
-    const user = await auth.api.getSession({
-      headers: await headers(),
-    });
-    return user;
+    return await auth.api.getSession({ headers: await headers() });
   } catch {
     return null;
   }
 };
 
-// FileRouter for your app
+// Best effort: extract UploadThing key from URL that contains "/f/"
+function getUploadThingKeyFromUrl(url?: string | null) {
+  if (!url) return null;
+  const idx = url.indexOf("/f/");
+  if (idx === -1) return null;
+
+  // everything after /f/ until ? or #
+  const after = url.slice(idx + 3);
+  const key = after.split("?")[0]?.split("#")[0];
+  return key || null;
+}
+
 export const ourFileRouter = {
   goalImageUploader: f({
-    image: {
-      maxFileSize: "4MB",
-      maxFileCount: 1,
-    },
+    image: { maxFileSize: "4MB", maxFileCount: 1 },
   })
-    .middleware(async ({ req }) => {
-      const user = await getUser();
-      if (!user) throw new UploadThingError("Unauthorized");
-      return { userId: user.user.id };
+    .middleware(async () => {
+      const session = await getUser();
+      if (!session) throw new UploadThingError("Unauthorized");
+      return { userId: session.user.id };
     })
     .onUploadComplete(async ({ metadata, file }) => {
-      console.log("Upload complete for userId:", metadata.userId);
-      console.log("file url", file.ufsUrl);
-
-      // ✅ Save media entry directly to DB
       const media = await db.media.create({
         data: {
           url: file.ufsUrl,
@@ -47,7 +49,45 @@ export const ourFileRouter = {
         },
       });
 
-      // ✅ Return the new Media ID to the client
+      return { mediaId: media.id, ufsUrl: file.ufsUrl };
+    }),
+
+  avatarUploader: f({
+    image: { maxFileSize: "2MB", maxFileCount: 1 },
+  })
+    .middleware(async () => {
+      const session = await getUser();
+      if (!session) throw new UploadThingError("Unauthorized");
+
+      const oldUrl = session.user.image ?? null; // existing avatar url
+      const oldKey = getUploadThingKeyFromUrl(oldUrl);
+
+      return { userId: session.user.id, oldKey };
+    })
+    .onUploadComplete(async ({ metadata, file }) => {
+      // Save media entry
+      const media = await db.media.create({
+        data: {
+          url: file.ufsUrl,
+          fileName: file.name ?? "avatar",
+          fileType: "image",
+          mimeType: file.type ?? "image/*",
+          extension: file.name?.split(".").pop() ?? "",
+          fileSize: file.size ?? 0,
+          uploadedBy: metadata.userId,
+        },
+      });
+
+      // Delete old avatar AFTER new upload succeeded
+      // Prevent deleting the same file if user reuploads quickly
+      if (metadata.oldKey && metadata.oldKey !== file.key) {
+        try {
+          await utapi.deleteFiles(metadata.oldKey);
+        } catch (err) {
+          console.warn("⚠️ Failed to delete old avatar:", err);
+        }
+      }
+
       return { mediaId: media.id, ufsUrl: file.ufsUrl };
     }),
 } satisfies FileRouter;

@@ -146,7 +146,7 @@ const DashboardUserButton = () => {
               </Button>
             )}
 
-            {data.user.role === "SUPERADMIN" && (
+            {data.user.role === "superadmin" && (
               <Button variant="outline" asChild>
                 <Link href="/admin">
                   <LayoutDashboard className="size-4 mr-2" />
@@ -226,7 +226,7 @@ const DashboardUserButton = () => {
           <CreditCardIcon className="size-4" />
         </DropdownMenuItem>
 
-        {data.user.role === "SUPERADMIN" && (
+        {data.user.role === "superadmin" && (
           <DropdownMenuItem asChild>
             <Link
               href="/admin"

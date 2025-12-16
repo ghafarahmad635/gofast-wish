@@ -48,7 +48,7 @@ export default function ForgotPasswordView() {
   }
 
   return (
-    <div className="flex justify-center items-center min-h-[80vh]">
+    <div className="flex justify-center items-center min-h-[80vh] p-6 md:p-10 max-w-sm md:max-w-3xl m-auto">
       <Card className="max-w-sm w-full shadow-lg">
         <CardContent className="p-6 space-y-6 text-center">
           <h1 className="text-2xl font-bold">Forgot Password</h1>

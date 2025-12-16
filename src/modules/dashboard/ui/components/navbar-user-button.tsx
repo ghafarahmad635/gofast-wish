@@ -12,7 +12,6 @@ import { authClient } from '@/lib/auth-client.ts';
 import { CreditCardIcon, LogOutIcon, UserIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import React from 'react'
 import { toast } from 'sonner';
 
 // NEW imports

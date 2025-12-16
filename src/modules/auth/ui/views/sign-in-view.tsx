@@ -97,8 +97,8 @@ const SignInView = () => {
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <Card className="overflow-hidden p-0">
+    <div className="flex flex-col items-center gap-6 p-3 md:p-6 max-w-2xl md:max-w-4xl m-auto">
+      <Card className="overflow-hidden p-0 w-full">
         <CardContent className="grid p-0 md:grid-cols-2">
           <Form {...form}>
             <form onSubmit={handleSubmit(onSubmit)} className="p-6 md:p-8">

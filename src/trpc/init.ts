@@ -44,7 +44,7 @@ export const adminProtectedProcedure = t.procedure.use(async ({ ctx, next }) => 
     throw new TRPCError({ code: 'UNAUTHORIZED', message: 'You must be logged in to access this resource.' });
   }
  
-  if (session.user?.role !== "SUPERADMIN") {
+  if (session.user?.role !== "superadmin") {
     throw new TRPCError({ code: 'FORBIDDEN', message: 'You do not have permission to access this resource.' });
   }
   return next({ ctx: {
