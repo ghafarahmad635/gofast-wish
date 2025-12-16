@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCookieCache, getSessionCookie } from "better-auth/cookies";
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
 	const sessionCookie = getSessionCookie(request);
   const session = await getCookieCache(request);
 

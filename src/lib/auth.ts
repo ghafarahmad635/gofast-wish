@@ -1,9 +1,10 @@
-import { betterAuth, createMiddleware } from "better-auth";
+import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { admin as adminPlugin, emailOTP } from "better-auth/plugins";
 import { stripe } from "@better-auth/stripe";
 import Stripe from "stripe";
 import { createAuthMiddleware } from "better-auth/api";
+
 import { db } from "./prisma";
 import { sendEmail } from "./email";
 
@@ -17,19 +18,22 @@ import { TrialStartedEmail } from "@/components/emails-templates/subscription/Tr
 import { TrialEndedEmail } from "@/components/emails-templates/subscription/TrialEndedEmail";
 import { SubscriptionCanceledEmail } from "@/components/emails-templates/subscription/SubscriptionCanceledEmail";
 import { PLAN_LIMITS, PLAN_TRIAL_DAYS } from "@/modules/upgrade/planConfig";
+import { ChangeEmailConfirmationEmail } from "@/components/emails-templates/ChangeEmailConfirmationEmail";
+import { ac, superadmin, user } from "./permissions";
 
+import { decodeJwtPayload } from "./utils";
+import { ChangeEmailVerificationEmail } from "@/components/emails-templates/ChangeEmailVerificationEmail";
+import { AccountEmailVerificationEmail } from "@/components/emails-templates/AccountEmailVerificationEmail";
 
 
 const stripeClient = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-08-27.basil", // ✅ keep latest
+  apiVersion: "2025-11-17.clover",
 });
 
 export const auth = betterAuth({
   database: prismaAdapter(db, { provider: "postgresql" }),
 
-  emailAndPassword: {
-    enabled: true,
-  },
+  emailAndPassword: { enabled: true },
 
   socialProviders: {
     google: {
@@ -38,42 +42,109 @@ export const auth = betterAuth({
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     },
   },
-  
-  emailVerification: {
-        autoSignInAfterVerification: true,
-        async afterEmailVerification(user, request) {
-            // Your custom logic here, e.g., grant access to premium features
 
-            console.log(`${user.email} has been successfully verified!`);
-            await sendEmail({
-            to: user.email,
-            subject: "Welcome to GoFast Wish 🎉",
-            react: WelcomeEmail({name:user.name}),
-          });
-
-        }
-  },
-
+  // IMPORTANT: required for changeEmail flow
+ 
   user: {
-    
+     deleteUser: {
+      enabled: true,
+    },
+    changeEmail: {
+      enabled: true,
+
+      // optional but recommended: confirm from CURRENT email first
+      async sendChangeEmailConfirmation({ user, newEmail, url }) {
+        void sendEmail({
+          to: user.email,
+          subject: "Approve email change",
+          text: `Approve changing your email to ${newEmail}: ${url}`,
+          react: ChangeEmailConfirmationEmail({
+            name: user.name ?? "Valued Customer",
+            currentEmail: user.email,
+            newEmail,
+            approveUrl: url,
+          }),
+        });
+      },
+      
+      
+    },
+
     additionalFields: {
-      role: { type: "string", required: false, defaultValue: "user", input: false },
+      
       loginStatus: { type: "boolean", required: false, defaultValue: true },
       country: { type: "string", required: false },
       timezone: { type: "string", required: false, defaultValue: "UTC" },
     },
   },
+   emailVerification: {
+     
+    autoSignInAfterVerification: true,
+     
+     async sendVerificationEmail({ user, url, token }, request) {
+    const payload = token ? decodeJwtPayload(token) : null;
+    const requestType = payload?.requestType;
 
-  
+    // Better Auth change email tokens commonly include updateTo
+    const newEmail = payload?.updateTo as string | undefined;
+
+    // Detect change email verification
+    const isChangeEmail =
+      requestType?.includes("change-email") ||
+      (newEmail && newEmail !== user.email);
+
+    if (isChangeEmail && newEmail) {
+      // Send "Verify new email" copy to the NEW email address
+      void sendEmail({
+        to: newEmail,
+        subject: "Verify your new email — GoFast Wish",
+        text: `Verify your new email: ${url}`,
+        react: ChangeEmailVerificationEmail({
+          name: user.name,
+          newEmail,
+          verifyUrl: url,
+        }),
+      });
+      return;
+    }
+
+    // Default: normal account verification (signup / unverified user)
+    void sendEmail({
+      to: user.email,
+      subject: "Verify your email — GoFast Wish",
+      text: `Verify your email: ${url}`,
+      react: AccountEmailVerificationEmail({
+        name: user.name,
+        verifyUrl: url,
+      }),
+    });
+  },
+
+    async afterEmailVerification(user,request) {
+      console.log(request)
+      console.log(`${user.email} has been successfully verified!`);
+
+      void sendEmail({
+        to: user.email,
+        subject: "Welcome to GoFast Wish 🎉",
+        react: WelcomeEmail({ name: user.name ?? "Friend" }),
+      });
+    },
+    
+  },
+
+
   plugins: [
-    adminPlugin({
-      adminRoles: ["SUPERADMIN"],
-      defaultRole: "USER",
-      adminUserIds: ["Xz9s3mfeZqteJvBNe9QEfcemO9XaIMlr"],
-      bannedUserMessage:
-        "You have been banned from this application. Please contact support.",
-      impersonationSessionDuration: 60 * 60 * 24, // 1 day
-    }),
+      adminPlugin({
+     ac,
+   roles: {superadmin},
+  defaultRole: "user",
+  
+  bannedUserMessage:
+    "You have been banned from this application. Please contact support.",
+  impersonationSessionDuration: 60 * 60 * 24,
+  }),
+
     stripe({
       stripeClient,
       stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET!,
@@ -84,44 +155,31 @@ export const auth = betterAuth({
           await db.user.update({
             where: { id: user.id },
             data: { stripeCustomerId: stripeCustomer.id },
-          })
-
-          // await sendEmail({
-          //   to: user.email,
-          //   subject: "Welcome to GoFast Wish — Your Stripe Account is Ready",
-          //   react: SubscriptionActivatedEmail({
-          //     title: "Welcome to GoFast Wish",
-          //     message:
-          //       "Your account is now connected to our payment system. You can start your subscription or upgrade anytime.",
-          //   }),
-          // })
+          });
         } catch (err) {
-          console.error("[Stripe:onCustomerCreate] Failed:", err)
+          console.error("[Stripe:onCustomerCreate] Failed:", err);
         }
       },
 
       onEvent: async (event) => {
-        if (event.type !== "invoice.paid") return
+        if (event.type !== "invoice.paid") return;
 
         try {
-          const invoice = event.data.object as Stripe.Invoice
-          const customerId = invoice.customer as string
+          const invoice = event.data.object as Stripe.Invoice;
+          const customerId = invoice.customer as string;
 
           const user = await db.user.findFirst({
             where: { stripeCustomerId: customerId },
-          })
-          if (!user) return
+          });
+          if (!user) return;
 
-           // 2) Get subscriptionId using the NEW Stripe invoice format only
           let subscriptionId: string | null = null;
 
-          // Preferred: parent.subscription_details.subscription
           const parent: any = (invoice as any).parent;
           if (parent?.type === "subscription_details") {
             subscriptionId = parent.subscription_details?.subscription ?? null;
           }
 
-          // Fallback: first line item parent.subscription_item_details.subscription
           if (!subscriptionId) {
             for (const line of invoice.lines.data as any[]) {
               const subFromLine =
@@ -133,8 +191,6 @@ export const auth = betterAuth({
             }
           }
 
-          // At this point subscriptionId is either "sub_..." or null
-          // You can decide if you want to require it or allow null
           if (!subscriptionId) {
             console.warn(
               "[Stripe:onEvent] invoice.paid: no subscription id found on invoice",
@@ -156,9 +212,9 @@ export const auth = betterAuth({
               customerEmail: invoice.customer_email || user.email,
               customerName: invoice.customer_name || user.name,
             },
-          })
+          });
 
-          await sendEmail({
+          void sendEmail({
             to: user.email,
             subject: "Payment Receipt — GoFast Wish",
             react: PaymentReceiptEmail({
@@ -167,9 +223,9 @@ export const auth = betterAuth({
               date: new Date(invoice.created * 1000).toLocaleDateString(),
               invoiceUrl: invoice.hosted_invoice_url,
             }),
-          })
+          });
         } catch (err) {
-          console.error("[Stripe:onEvent] invoice.paid handler failed:", err)
+          console.error("[Stripe:onEvent] invoice.paid handler failed:", err);
         }
       },
 
@@ -182,37 +238,38 @@ export const auth = betterAuth({
             name: "standard",
             priceId: "price_1SKYqAD8qR70pjFErK5C207r",
             annualDiscountPriceId: "price_1SN4QaD8qR70pjFEL3eaU7HH",
-            freeTrial:{
-               days: PLAN_TRIAL_DAYS.standard,
-               onTrialStart: async (subscription) => {
+            freeTrial: {
+              days: PLAN_TRIAL_DAYS.standard,
+              onTrialStart: async (subscription) => {
                 try {
                   const user = await db.user.findFirst({
                     where: { id: subscription.referenceId },
-                  })
-                  if (!user) return
-                  await sendEmail({
+                  });
+                  if (!user) return;
+
+                  void sendEmail({
                     to: user.email,
                     subject: "Your Free Trial Has Started — GoFast Wish",
                     react: TrialStartedEmail({ name: user.name ?? "User" }),
-                  })
+                  });
                 } catch (err) {
-                  console.error("[Stripe:onTrialStart] Failed:", err)
+                  console.error("[Stripe:onTrialStart] Failed:", err);
                 }
               },
-
               onTrialEnd: async ({ subscription }) => {
                 try {
                   const user = await db.user.findFirst({
                     where: { id: subscription.referenceId },
-                  })
-                  if (!user) return
-                  await sendEmail({
+                  });
+                  if (!user) return;
+
+                  void sendEmail({
                     to: user.email,
                     subject: "Your Trial Has Ended — Upgrade Now",
                     react: TrialEndedEmail({ name: user.name ?? "User" }),
-                  })
+                  });
                 } catch (err) {
-                  console.error("[Stripe:onTrialEnd] Failed:", err)
+                  console.error("[Stripe:onTrialEnd] Failed:", err);
                 }
               },
             },
@@ -220,7 +277,6 @@ export const auth = betterAuth({
               createWishes: PLAN_LIMITS.standard.wishes,
               createHabits: PLAN_LIMITS.standard.habits,
             },
-            
           },
           {
             name: "pro",
@@ -232,31 +288,32 @@ export const auth = betterAuth({
                 try {
                   const user = await db.user.findFirst({
                     where: { id: subscription.referenceId },
-                  })
-                  if (!user) return
-                  await sendEmail({
+                  });
+                  if (!user) return;
+
+                  void sendEmail({
                     to: user.email,
                     subject: "Your Free Trial Has Started — GoFast Wish",
                     react: TrialStartedEmail({ name: user.name ?? "User" }),
-                  })
+                  });
                 } catch (err) {
-                  console.error("[Stripe:onTrialStart] Failed:", err)
+                  console.error("[Stripe:onTrialStart] Failed:", err);
                 }
               },
-
               onTrialEnd: async ({ subscription }) => {
                 try {
                   const user = await db.user.findFirst({
                     where: { id: subscription.referenceId },
-                  })
-                  if (!user) return
-                  await sendEmail({
+                  });
+                  if (!user) return;
+
+                  void sendEmail({
                     to: user.email,
                     subject: "Your Trial Has Ended — Upgrade Now",
                     react: TrialEndedEmail({ name: user.name ?? "User" }),
-                  })
+                  });
                 } catch (err) {
-                  console.error("[Stripe:onTrialEnd] Failed:", err)
+                  console.error("[Stripe:onTrialEnd] Failed:", err);
                 }
               },
             },
@@ -267,18 +324,19 @@ export const auth = betterAuth({
           try {
             const user = await db.user.findFirst({
               where: { id: subscription.referenceId },
-            })
-            if (!user) return
-            await sendEmail({
+            });
+            if (!user) return;
+
+            void sendEmail({
               to: user.email,
               subject: `Your ${plan.name} Plan is Active — GoFast Wish`,
               react: SubscriptionActivatedEmail({
                 title: "Subscription Activated",
                 message: `Your ${plan.name} plan is now active. Thank you for joining GoFast Wish.`,
               }),
-            })
+            });
           } catch (err) {
-            console.error("[Stripe:onSubscriptionComplete] Failed:", err)
+            console.error("[Stripe:onSubscriptionComplete] Failed:", err);
           }
         },
 
@@ -286,9 +344,10 @@ export const auth = betterAuth({
           try {
             const user = await db.user.findFirst({
               where: { id: subscription.referenceId },
-            })
-            if (!user) return
-            await sendEmail({
+            });
+            if (!user) return;
+
+            void sendEmail({
               to: user.email,
               subject: "Subscription Canceled — GoFast Wish",
               react: SubscriptionCanceledEmail({
@@ -296,25 +355,23 @@ export const auth = betterAuth({
                 message:
                   "We're sorry to see you go. You can reactivate anytime from your dashboard.",
               }),
-            })
+            });
           } catch (err) {
-            console.error("[Stripe:onSubscriptionCancel] Failed:", err)
+            console.error("[Stripe:onSubscriptionCancel] Failed:", err);
           }
         },
       },
     }),
-     // 🔹 Email OTP Verification Plugin
-      emailOTP({
-      overrideDefaultEmailVerification: true, // replaces link-based verification with OTP
-      sendVerificationOnSignUp: true,         // ✅ auto-send OTP when user signs up
-      otpLength: 6,
-      expiresIn: 600, // 10 minutes
-      allowedAttempts: 5,
-      
-      
-      async sendVerificationOTP({ email, otp, type }) {
-        // console.log(`🔐 Sending ${type} OTP ${otp} to ${email}`);
 
+    // IMPORTANT: do not override default email verification
+    emailOTP({
+      overrideDefaultEmailVerification: true,
+      sendVerificationOnSignUp: true,
+      otpLength: 6,
+      expiresIn: 600,
+      allowedAttempts: 5,
+
+      async sendVerificationOTP({ email, otp, type }) {
         let subject = "Your GoFast Wish verification code";
         if (type === "sign-in") subject = "Your GoFast Wish sign-in code";
         if (type === "forget-password") subject = "Reset your GoFast Wish password";
@@ -331,40 +388,39 @@ export const auth = betterAuth({
               : SignupOtpEmail({ otp }),
         });
       },
-      
-      
-    })
-
+    }),
   ],
+
   databaseHooks: {
     user: {
       create: {
-        // runs once after Better Auth has inserted the user
-        after: async (user, ctx) => {
+        after: async (user) => {
           try {
-            // short circuit if already seeded for some reason
             const existing = await db.user.findUnique({
               where: { id: user.id },
-              select: { demoSeededAt: true, welcomeEmailSent: true, email: true, name: true },
+              select: {
+                demoSeededAt: true,
+                welcomeEmailSent: true,
+                email: true,
+                name: true,
+              },
             });
             if (existing?.demoSeededAt) return;
 
             await db.$transaction(async (tx) => {
-              // default goals
               await tx.goal.createMany({
                 data: [
                   {
                     title: "Welcome to GoFast Wish 🎉",
                     description: "This is your first goal. You can edit or delete it anytime.",
-                    
                     priority: 2,
                     isCompleted: false,
                     userId: user.id,
                   },
                   {
                     title: "Explore Your Dashboard",
-                    description: "Familiarize yourself with your dashboard and start creating new wishes and habits.",
-                    
+                    description:
+                      "Familiarize yourself with your dashboard and start creating new wishes and habits.",
                     priority: 3,
                     isCompleted: false,
                     userId: user.id,
@@ -372,7 +428,6 @@ export const auth = betterAuth({
                   {
                     title: "Customize Your Profile",
                     description: "Add your name, country, and time zone to personalize your experience.",
-                    
                     priority: 3,
                     isCompleted: false,
                     userId: user.id,
@@ -380,7 +435,6 @@ export const auth = betterAuth({
                   {
                     title: "Start Your First Habit 🚀",
                     description: "Track your first habit to stay motivated and build progress over time.",
-                   
                     priority: 1,
                     isCompleted: false,
                     userId: user.id,
@@ -388,7 +442,6 @@ export const auth = betterAuth({
                 ],
               });
 
-              // default habits
               const now = new Date();
               await tx.habit.createMany({
                 data: [
@@ -423,20 +476,19 @@ export const auth = betterAuth({
                 ],
               });
 
-              // mark seeded
               await tx.user.update({
                 where: { id: user.id },
                 data: { demoSeededAt: new Date() },
               });
             });
 
-            // welcome email once
             if (!existing?.welcomeEmailSent) {
-              await sendEmail({
+              void sendEmail({
                 to: user.email,
                 subject: "Welcome to GoFast Wish 🎉",
                 react: WelcomeEmail({ name: user.name ?? "Friend" }),
               });
+
               await db.user.update({
                 where: { id: user.id },
                 data: { welcomeEmailSent: true },
@@ -449,15 +501,12 @@ export const auth = betterAuth({
       },
     },
   },
+
   hooks: {
-    
     after: createAuthMiddleware(async (ctx) => {
-      
       if (ctx.path.startsWith("/sign-up")) {
         const newSession = ctx.context.newSession;
-        if (newSession) {
-          console.log("New user session created", newSession.user.id);
-        }
+        if (newSession) console.log("New user session created", newSession.user.id);
       }
     }),
   },

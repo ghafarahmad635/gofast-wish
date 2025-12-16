@@ -82,8 +82,8 @@ export default function ResetPasswordOTPView({ email }: ResetPasswordViewProps) 
   }
 
   return (
-    <div className="flex justify-center items-center min-h-[80vh]">
-      <Card className="max-w-lg w-full shadow-lg">
+    <div className="flex justify-center items-center min-h-[80vh] p-6 md:p-10 max-w-sm md:max-w-3xl m-auto">
+      <Card className="max-w-lg w-full shadow-lg ">
         <CardContent className="p-6 space-y-6 text-center">
           <h1 className="text-2xl font-bold">Reset Password</h1>
           <p className="text-muted-foreground">

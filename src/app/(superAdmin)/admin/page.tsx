@@ -11,7 +11,7 @@ const page = async() => {
         redirect("/sign-in");
       }
        const userRole = session.user?.role;
-       if (userRole !== "SUPERADMIN") {
+       if (userRole !== "superadmin") {
     
     redirect("/dashboard");
   }

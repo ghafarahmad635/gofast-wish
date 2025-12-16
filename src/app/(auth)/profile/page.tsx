@@ -1,17 +1,10 @@
-import { auth } from '@/lib/auth'
-import { headers } from 'next/headers'
-import React from 'react'
+import { Suspense } from "react";
+import ProfileViews from "@/modules/auth/ui/views/profile-views";
 
-const page = async() => {
-  const sesstion=await auth.api.getSession({
-    headers:await headers()
-  })
+export default function Page() {
   return (
-    <div>
-     
-      {sesstion?.user.email}
-    </div>
-  )
+    <Suspense fallback={null}>
+      <ProfileViews />
+    </Suspense>
+  );
 }
-
-export default page
