@@ -1,7 +1,9 @@
 import { auth } from '@/lib/auth'
+import AdminCharts from '@/modules/admin-dashboard/ui/layouts/AdminCharts';
+import KpisData from '@/modules/admin-dashboard/ui/layouts/kpis-data';
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation';
-import React from 'react'
+
 
 const page = async() => {
    const session = await auth.api.getSession({
@@ -17,9 +19,9 @@ const page = async() => {
   }
     
   return (
-    <div>
-      {JSON.stringify(session.user,null,2)}
-      SuperAdmin {session.user.role}
+    <div className='p-6 space-y-4'>
+      <KpisData/>
+      <AdminCharts/>
     </div>
   )
 }

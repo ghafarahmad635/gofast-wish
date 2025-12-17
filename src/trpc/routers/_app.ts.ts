@@ -9,6 +9,7 @@ import { adminSubscriptions } from '@/modules/admin-subscription/server/procedur
 import { adminOrders } from '@/modules/admin-orders/server/procedures';
 import { adminAddons } from '@/modules/admin-addons/server/procedures';
 import { adminGoalsCategories } from '@/modules/admin-goals-categoires/server/procedures';
+import { adminDashboard } from '@/modules/admin-dashboard/server/procedures';
 
 export const appRouter = createTRPCRouter({
  goals:goalsRouter,
@@ -19,7 +20,8 @@ export const appRouter = createTRPCRouter({
  adminSubscriptions:adminSubscriptions,
  adminOrders:adminOrders,
  adminAddons:adminAddons,
- adminGoalsCategories:adminGoalsCategories
+ adminGoalsCategories:adminGoalsCategories,
+ adminDashboard:adminDashboard
 
 });
 
