@@ -1,5 +1,6 @@
 import { auth } from '@/lib/auth'
 import AdminCharts from '@/modules/admin-dashboard/ui/layouts/AdminCharts';
+import AdminOverviewPanels from '@/modules/admin-dashboard/ui/layouts/AdminOverviewPanels';
 import KpisData from '@/modules/admin-dashboard/ui/layouts/kpis-data';
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation';
@@ -22,6 +23,7 @@ const page = async() => {
     <div className='p-6 space-y-4'>
       <KpisData/>
       <AdminCharts/>
+      <AdminOverviewPanels/>
     </div>
   )
 }
