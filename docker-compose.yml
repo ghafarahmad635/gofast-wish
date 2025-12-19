@@ -1,6 +1,8 @@
 services:
   web:
     build: .
+    image: gofast-wish-web:latest
+    container_name: gofast-wish-web
     ports:
       - "3000:3000"
     environment:
