@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro Image Studio | Batch Converter</title>
+    <!-- JSZip -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <!-- Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --accent: #ec4899;
+            --bg: #F8FAFC;
+            --surface: #FFFFFF;
+            --text-main: #1e293b;
+            --text-sub: #64748b;
+            --border: #e2e8f0;
+            --success: #10b981;
+            --radius-lg: 24px;
+            --radius-md: 12px;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', system-ui, sans-serif; outline: none; -webkit-tap-highlight-color: transparent; }
+        body { background-color: var(--bg); color: var(--text-main); padding-bottom: 140px; }
+
+        .container { max-width: 900px; margin: 0 auto; padding: 50px 20px; }
+        
+        .header { text-align: center; margin-bottom: 50px; }
+        .header h1 { 
+            font-size: 2.5rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 10px;
+            background: linear-gradient(135deg, var(--primary), var(--accent)); 
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; 
+        }
+        .header p { color: var(--text-sub); font-size: 1.1rem; }
+
+        /* Upload Zone */
+        .upload-zone {
+            background: var(--surface); border: 2px dashed #cbd5e1; border-radius: var(--radius-lg);
+            padding: 50px 20px; text-align: center; cursor: pointer; transition: all 0.3s ease;
+            position: relative; overflow: hidden;
+        }
+        .upload-zone:hover, .upload-zone.dragover { 
+            border-color: var(--primary); background: #eef2ff; transform: translateY(-3px); box-shadow: var(--shadow-lg); 
+        }
+        .upload-icon { font-size: 64px; color: var(--primary); margin-bottom: 15px; opacity: 0.9; }
+        .btn-upload {
+            background: var(--text-main); color: white; border: none; padding: 12px 30px;
+            border-radius: 99px; font-weight: 600; font-size: 1rem; margin-top: 20px; cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1); transition: transform 0.2s;
+        }
+        .btn-upload:hover { transform: scale(1.05); }
+
+        /* File List */
+        .file-list { margin-top: 40px; display: flex; flex-direction: column; gap: 16px; }
+
+        .file-card {
+            background: var(--surface); border-radius: var(--radius-md); padding: 16px;
+            display: grid; grid-template-columns: 80px 1fr auto auto auto; gap: 20px; align-items: center;
+            box-shadow: var(--shadow-sm); border: 1px solid var(--border); transition: transform 0.2s, box-shadow 0.2s;
+            position: relative; 
+            z-index: 1; /* Base z-index */
+        }
+        .file-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+        .file-card.done { border-color: var(--success); background: #f0fdf4; }
+        
+        /* Z-INDEX FIX: This class is added via JS when dropdown opens */
+        .file-card.z-elevated {
+            z-index: 50 !important;
+        }
+
+        /* Thumbnail */
+        .thumb-wrapper { 
+            width: 80px; height: 80px; border-radius: 10px; overflow: hidden; background: #f1f5f9; position: relative; 
+            cursor: default; border: 1px solid rgba(0,0,0,0.05);
+        }
+        .thumb { width: 100%; height: 100%; object-fit: cover; }
+        .overlay-hint {
+            position: absolute; inset: 0; background: rgba(0,0,0,0.4); display: grid; place-items: center;
+            color: white; font-size: 24px; opacity: 0; transition: 0.2s; cursor: pointer;
+        }
+        .thumb-wrapper:hover .overlay-hint { opacity: 1; }
+
+        .file-info { min-width: 0; }
+        .file-name { 
+            width: 100%; border: 1px solid transparent; background: transparent; 
+            font-weight: 600; font-size: 1rem; padding: 4px 0; color: var(--text-main);
+        }
+        .file-name:focus { border-bottom: 1px solid var(--primary); }
+        .file-meta { font-size: 0.85rem; color: var(--text-sub); display: flex; gap: 10px; margin-top: 4px; align-items: center; }
+
+        .badge { padding: 4px 10px; border-radius: 99px; font-size: 0.75rem; font-weight: 700; }
+        .badge-saved { background: #d1fae5; color: #047857; }
+        .badge-up { background: #fee2e2; color: #b91c1c; }
+
+        .action-group { display: flex; gap: 8px; }
+        .btn-icon { 
+            width: 36px; height: 36px; border-radius: 50%; border: none; background: #F1F5F9; 
+            color: var(--text-sub); cursor: pointer; display: grid; place-items: center; font-size: 1.1rem; transition: 0.2s; 
+        }
+        .btn-icon:hover { background: #e2e8f0; color: var(--text-main); }
+        .btn-icon.download { color: var(--success); background: #ecfdf5; }
+        .btn-icon.download:hover { background: #d1fae5; }
+        .btn-icon.delete:hover { background: #fee2e2; color: #ef4444; }
+
+        /* Dropdown */
+        .format-selector { position: relative; }
+        .pill {
+            background: #F1F5F9; padding: 8px 16px; border-radius: 99px; font-weight: 600; font-size: 0.9rem;
+            cursor: pointer; display: flex; align-items: center; gap: 6px; user-select: none; border: 1px solid transparent;
+        }
+        .pill:hover { background: #e2e8f0; }
+        
+        .dropdown-menu {
+            position: absolute; top: 120%; right: 0; width: 200px; max-height: 300px; overflow-y: auto;
+            background: white; border-radius: 12px; box-shadow: 0 10px 30px -5px rgba(0,0,0,0.15);
+            padding: 8px; display: none; border: 1px solid var(--border);
+            /* Ensure dropdown itself is high, but relies on parent card being elevated */
+            z-index: 100; 
+        }
+        .dropdown-menu.show { display: block; animation: fadeUp 0.1s; }
+        .dd-item { padding: 10px; border-radius: 6px; cursor: pointer; display: flex; justify-content: space-between; font-size: 0.9rem; }
+        .dd-item:hover { background: #F1F5F9; }
+        .dd-item.selected { background: #EEF2FF; color: var(--primary); font-weight: 600; }
+
+        /* Modals */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(5px);
+            z-index: 2000; display: none; place-items: center; padding: 20px;
+            animation: fadeIn 0.2s ease;
+        }
+        .modal-overlay.open { display: grid; }
+        .modal-box {
+            background: var(--surface); width: 100%; max-width: 500px; border-radius: 24px;
+            padding: 30px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            transform: scale(0.95); opacity: 0; transition: 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .modal-overlay.open .modal-box { transform: scale(1); opacity: 1; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .modal-title { font-size: 1.25rem; font-weight: 700; color: var(--text-main); }
+        .btn-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-sub); }
+
+        .form-group { margin-bottom: 20px; }
+        .form-label { display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-sub); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
+        .input-row { display: flex; gap: 10px; }
+        .form-input { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 12px; font-size: 1rem; }
+        .form-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px #e0e7ff; }
+
+        /* Comparison Slider */
+        .compare-wrapper {
+            position: relative; width: 100%; aspect-ratio: 16/9;
+            background: #0f172a; border-radius: 16px; overflow: hidden;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5); border: 1px solid var(--border);
+        }
+        .compare-img {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            object-fit: contain; user-select: none;
+        }
+        .img-after { z-index: 2; clip-path: inset(0 0 0 50%); }
+        .slider-line {
+            position: absolute; top: 0; bottom: 0; left: 50%; width: 2px;
+            background: white; z-index: 10; pointer-events: none;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+        .slider-dot {
+            position: absolute; top: 50%; left: 50%; width: 40px; height: 40px;
+            background: white; border-radius: 50%; transform: translate(-50%, -50%);
+            z-index: 11; display: grid; place-items: center; color: var(--primary);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3); pointer-events: none;
+        }
+        .slider-input {
+            position: absolute; width: 100%; height: 100%; z-index: 20;
+            opacity: 0; cursor: ew-resize; margin: 0;
+        }
+        .badge-ov { position: absolute; padding: 4px 8px; background: rgba(0,0,0,0.7); color: white; font-size: 0.75rem; border-radius: 6px; z-index: 5; font-weight: 600; pointer-events: none; }
+
+        /* Toolbar */
+        .toolbar {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            background: #1e293b; padding: 8px 10px; border-radius: 99px;
+            display: none; align-items: center; gap: 8px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4); z-index: 100;
+        }
+        .toolbar.visible { display: flex; animation: slideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .tool-btn {
+            background: transparent; border: none; color: white; padding: 12px 20px;
+            border-radius: 99px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;
+            transition: 0.2s; white-space: nowrap; font-size: 0.95rem;
+        }
+        .tool-btn:hover { background: rgba(255,255,255,0.15); }
+        .tool-btn.primary { background: var(--primary); color: white; }
+        .tool-btn.primary:hover { background: var(--primary-dark); }
+        
+        @keyframes slideUp { from { transform: translate(-50%, 150%); } to { transform: translate(-50%, 0); } }
+        @keyframes fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+
+        @media (max-width: 600px) {
+            .file-card { grid-template-columns: 70px 1fr; grid-template-rows: auto auto auto; gap: 12px; }
+            .thumb-wrapper { grid-row: 1/4; height: 100%; min-height: 80px; }
+            .action-group { grid-column: 2; justify-self: end; }
+            .format-selector { grid-column: 2; width: 100%; }
+            .pill { justify-content: space-between; width: 100%; }
+            .toolbar { width: 90%; justify-content: space-between; padding: 10px; }
+            .tool-btn { padding: 10px 14px; font-size: 0.85rem; }
+            .tool-btn span { display: none; } 
+            .tool-btn i { font-size: 1.2rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>Pro Image Studio</h1>
+        <p>Advanced Bulk Converter, Optimizer & Resizer</p>
+    </div>
+
+    <div class="upload-zone" id="dropzone">
+        <i class="ph ph-images-square upload-icon"></i>
+        <h3>Drop images here to begin</h3>
+        <p style="margin:10px 0; color:var(--text-sub)">Supports JPG, PNG, WEBP, AVIF, BMP, TIFF, ICO</p>
+        <button class="btn-upload" onclick="document.getElementById('fileIn').click()">Select Images</button>
+        <input type="file" id="fileIn" multiple accept="image/*" style="display:none">
+    </div>
+
+    <div class="file-list" id="fileList"></div>
+</div>
+
+<!-- Toolbar -->
+<div class="toolbar" id="toolbar">
+    <button class="tool-btn" onclick="clearAll()" style="color:#f87171"><i class="ph ph-trash"></i> <span>Clear</span></button>
+    <button class="tool-btn" onclick="openSettings()"><i class="ph ph-sliders"></i> <span>Settings</span></button>
+    <button class="tool-btn" onclick="document.getElementById('fileIn').click()"><i class="ph ph-plus"></i> <span>Add</span></button>
+    <div style="width:1px; height:24px; background:rgba(255,255,255,0.2); margin:0 5px;"></div>
+    <button class="tool-btn primary" id="btnConvert"><i class="ph ph-lightning"></i> <span>Convert All</span></button>
+    <button class="tool-btn primary" id="btnZip" style="display:none; background:var(--success)"><i class="ph ph-download-simple"></i> <span>Download ZIP</span></button>
+</div>
+
+<!-- Settings Modal -->
+<div class="modal-overlay" id="settingsModal">
+    <div class="modal-box">
+        <div class="modal-header">
+            <div class="modal-title">Global Settings</div>
+            <button class="btn-close" onclick="closeSettings()">&times;</button>
+        </div>
+        
+        <div class="form-group">
+            <div class="form-label" style="display:flex; justify-content:space-between;">
+                <span>Quality / Compression</span>
+                <span id="qtyDisplay" style="color:var(--primary)">80%</span>
+            </div>
+            <input type="range" id="sQuality" min="10" max="100" value="80" style="width:100%; accent-color:var(--primary); cursor:pointer">
+        </div>
+
+        <div class="form-group">
+            <div class="form-label">Resize Strategy</div>
+            <div style="background:#F1F5F9; padding:4px; border-radius:10px; display:flex; margin-bottom:10px;">
+                <button class="pill" style="flex:1; justify-content:center; background:white; color:var(--primary)" id="modePx" onclick="setMode('px')">Pixels</button>
+                <button class="pill" style="flex:1; justify-content:center; background:transparent;" id="modePct" onclick="setMode('pct')">Percentage</button>
+            </div>
+            <div id="inputsPx" class="input-row">
+                <input type="number" id="sWidth" class="form-input" placeholder="Width (px)">
+                <input type="number" id="sHeight" class="form-input" placeholder="Height (px)">
+            </div>
+            <div id="inputsPct" class="input-row" style="display:none">
+                <input type="number" id="sScale" class="form-input" placeholder="Scale % (e.g. 50)" max="100">
+            </div>
+            <label style="display:flex; align-items:center; gap:8px; margin-top:12px; font-size:0.9rem; font-weight:600; cursor:pointer">
+                <input type="checkbox" id="sLock" checked style="accent-color:var(--primary); width:18px; height:18px;"> Lock Aspect Ratio
+            </label>
+        </div>
+
+        <div class="form-group">
+            <div class="form-label">Bulk Rename</div>
+            <input type="text" id="sRename" class="form-input" placeholder="image-### (### becomes 001)">
+        </div>
+
+        <div class="input-row" style="margin-top:30px;">
+            <button class="btn-upload" style="background:#F1F5F9; color:var(--text-main); flex:1; margin:0; box-shadow:none;" onclick="resetSettings()">Reset</button>
+            <button class="btn-upload" style="background:var(--primary); flex:1; margin:0;" onclick="applySettings()">Apply</button>
+        </div>
+    </div>
+</div>
+
+<!-- Comparison Modal -->
+<div class="modal-overlay" id="compareModal">
+    <div class="modal-box" style="max-width:900px; padding:20px;">
+        <div class="modal-header">
+            <div class="modal-title">Result Comparison</div>
+            <button class="btn-close" onclick="closeCompare()">&times;</button>
+        </div>
+        
+        <div class="compare-wrapper">
+            <span class="badge-ov" style="top:15px; left:15px;">Processed</span>
+            <span class="badge-ov" style="top:15px; right:15px;">Original</span>
+            <img id="imgOrig" class="compare-img">
+            <img id="imgProc" class="compare-img img-after">
+            <div class="slider-line"></div>
+            <div class="slider-dot"><i class="ph-bold ph-arrows-left-right"></i></div>
+            <input type="range" class="slider-input" min="0" max="100" value="50" oninput="updateSlider(this)">
+        </div>
+
+        <div style="display:flex; justify-content:space-between; margin-top:20px; font-weight:600; font-size:0.95rem;">
+            <div id="metaProc" style="color:var(--success)">New: 0KB</div>
+            <div id="metaOrig" style="color:var(--text-sub)">Original: 0KB</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let files = []; 
+    const formats = [
+        {ext:'webp', name:'WEBP'}, {ext:'jpeg', name:'JPG'}, {ext:'png', name:'PNG'},
+        {ext:'avif', name:'AVIF'}, {ext:'bmp', name:'BMP'}, {ext:'ico', name:'ICO'}, {ext:'tiff', name:'TIFF'}
+    ];
+
+    const fileIn = document.getElementById('fileIn');
+    const dropzone = document.getElementById('dropzone');
+    const list = document.getElementById('fileList');
+    const toolbar = document.getElementById('toolbar');
+    const settingsModal = document.getElementById('settingsModal');
+    const compareModal = document.getElementById('compareModal');
+    const btnConvert = document.getElementById('btnConvert');
+
+    fileIn.onchange = (e) => addFiles(e.target.files);
+    dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('dragover'); });
+    dropzone.addEventListener('dragleave', e => { e.preventDefault(); dropzone.classList.remove('dragover'); });
+    dropzone.addEventListener('drop', e => { e.preventDefault(); dropzone.classList.remove('dragover'); addFiles(e.dataTransfer.files); });
+
+    function addFiles(fileList) {
+        if(!fileList.length) return;
+        toolbar.classList.add('visible');
+        
+        Array.from(fileList).forEach(f => {
+            if(!f.type.startsWith('image/')) return;
+            const id = Math.random().toString(36).substr(2, 9);
+            files.push({
+                id, file: f, 
+                name: f.name.substring(0, f.name.lastIndexOf('.')),
+                format: 'image/webp',
+                status: 'pending', 
+                origUrl: URL.createObjectURL(f),
+                procBlob: null, procSize: 0, procUrl: null
+            });
+        });
+
+        const pattern = document.getElementById('sRename').value;
+        if(pattern) applyRenamePattern(pattern);
+        render();
+    }
+
+    function render() {
+        list.innerHTML = '';
+        files.forEach((item) => {
+            const extInfo = formats.find(f => `image/${f.ext}` === item.format || (item.format==='image/x-icon' && f.ext==='ico'));
+            const extName = extInfo ? extInfo.name : 'EXT';
+
+            const card = document.createElement('div');
+            card.className = `file-card ${item.status === 'done' ? 'done' : ''}`;
+            card.id = `card-${item.id}`; // Crucial for Finding closest parent
+            
+            const clickAction = item.status === 'done' ? `onclick="openCompare('${item.id}')"` : '';
+            const thumbSrc = item.status === 'done' ? item.procUrl : item.origUrl;
+            const hint = item.status === 'done' ? '<div class="overlay-hint"><i class="ph ph-arrows-left-right"></i></div>' : '';
+
+            let metaHtml = `<span>${(item.file.size/1024).toFixed(1)} KB</span> • <span style="color:var(--text-sub)">${item.file.type.split('/')[1].toUpperCase()}</span>`;
+            let downloadBtn = '';
+
+            if(item.status === 'done') {
+                const saved = item.file.size - item.procSize;
+                const savedPct = Math.round((saved/item.file.size)*100);
+                if(saved > 0) metaHtml = `<span class="badge badge-saved">Saved ${savedPct}%</span> <span style="font-size:0.85rem">${(item.procSize/1024).toFixed(1)} KB</span>`;
+                else metaHtml = `<span class="badge badge-up">+${Math.abs(savedPct)}%</span> <span style="font-size:0.85rem">${(item.procSize/1024).toFixed(1)} KB</span>`;
+                downloadBtn = `<button class="btn-icon download" onclick="downloadSingle('${item.id}')" title="Download Image"><i class="ph-bold ph-download-simple"></i></button>`;
+            } else if(item.status === 'processing') {
+                 metaHtml = `<span style="color:var(--primary); font-weight:600;"><i class="ph ph-spinner ph-spin"></i> Converting...</span>`;
+            }
+
+            card.innerHTML = `
+                <div class="thumb-wrapper" ${clickAction} title="${item.status==='done'?'Click to Compare':''}">
+                    <img src="${thumbSrc}" class="thumb">
+                    ${hint}
+                </div>
+                
+                <div class="file-info">
+                    <input class="file-name" value="${item.name}" onchange="updateMeta('${item.id}', 'name', this.value)">
+                    <div class="file-meta">${metaHtml}</div>
+                </div>
+
+                <div class="format-selector">
+                    <div class="pill" onclick="toggleDD('${item.id}')"><span>Convert to <b>${extName}</b></span> <i class="ph ph-caret-down"></i></div>
+                    <div class="dropdown-menu" id="dd-${item.id}">
+                        <div style="padding:4px;"><input style="width:100%; padding:6px; border:1px solid #e2e8f0; border-radius:6px; font-size:0.85rem;" placeholder="Search..." onkeyup="filterDD('${item.id}', this.value)" onclick="event.stopPropagation()"></div>
+                        <div id="opts-${item.id}">${getFormatOpts(item.id, item.format)}</div>
+                    </div>
+                </div>
+
+                <div class="action-group">
+                    ${downloadBtn}
+                    <button class="btn-icon delete" onclick="removeItem('${item.id}')" title="Remove"><i class="ph ph-trash"></i></button>
+                </div>
+            `;
+            list.appendChild(card);
+        });
+
+        if(files.length === 0) toolbar.classList.remove('visible');
+        const anyDone = files.some(f => f.status === 'done');
+        document.getElementById('btnZip').style.display = anyDone ? 'flex' : 'none';
+        btnConvert.innerHTML = anyDone ? `<i class="ph ph-lightning"></i> <span>Convert Again</span>` : `<i class="ph ph-lightning"></i> <span>Convert All</span>`;
+        btnConvert.disabled = false;
+    }
+
+    // --- Drodown Logic (Fixing Overlap) ---
+    window.toggleDD = (id) => {
+        // Close all others and reset z-indexes
+        document.querySelectorAll('.dropdown-menu').forEach(d => d.classList.remove('show'));
+        document.querySelectorAll('.file-card').forEach(c => c.classList.remove('z-elevated'));
+
+        const dd = document.getElementById(`dd-${id}`);
+        // Toggle Current
+        if (!dd.classList.contains('show')) {
+            dd.classList.add('show');
+            // Elevate parent z-index so dropdown sits on top of next card
+            const card = dd.closest('.file-card');
+            if (card) card.classList.add('z-elevated');
+
+            // Click outside listener
+            setTimeout(() => document.addEventListener('click', function c(e) {
+                if(!dd.contains(e.target) && !e.target.closest('.pill')) {
+                    dd.classList.remove('show');
+                    if (card) card.classList.remove('z-elevated'); // Reset z-index
+                    document.removeEventListener('click', c);
+                }
+            }), 0);
+        }
+    };
+
+    window.getFormatOpts = (id, current) => {
+        return formats.map(f => {
+            const mime = f.ext==='ico'?'image/x-icon':`image/${f.ext}`;
+            const sel = mime === current ? 'selected' : '';
+            return `<div class="dd-item ${sel}" onclick="setFmt('${id}','${mime}')"><span>${f.name}</span>${sel?'<i class="ph-bold ph-check"></i>':''}</div>`;
+        }).join('');
+    };
+
+    window.filterDD = (id, val) => {
+        const q = val.toLowerCase();
+        const html = formats.filter(f => f.name.toLowerCase().includes(q)).map(f => {
+            const mime = f.ext==='ico'?'image/x-icon':`image/${f.ext}`;
+            return `<div class="dd-item" onclick="setFmt('${id}','${mime}')"><span>${f.name}</span></div>`;
+        }).join('');
+        document.getElementById(`opts-${id}`).innerHTML = html;
+    };
+
+    window.setFmt = (id, mime) => {
+        const f = files.find(f => f.id === id);
+        f.format = mime;
+        // Close dropdown & reset z-index logic
+        document.getElementById(`dd-${id}`).classList.remove('show');
+        const card = document.getElementById(`card-${id}`);
+        if(card) card.classList.remove('z-elevated');
+        
+        render();
+    };
+
+    // --- Processing ---
+    btnConvert.onclick = async () => {
+        const btn = btnConvert;
+        btn.innerHTML = `<i class="ph ph-spinner ph-spin"></i> <span>Processing...</span>`;
+        btn.disabled = true;
+
+        const q = parseInt(document.getElementById('sQuality').value) / 100;
+        const mode = document.getElementById('modePx').style.backgroundColor === 'white' ? 'px' : 'pct';
+        const w = parseInt(document.getElementById('sWidth').value) || 0;
+        const h = parseInt(document.getElementById('sHeight').value) || 0;
+        const scale = parseInt(document.getElementById('sScale').value) || 100;
+        const lock = document.getElementById('sLock').checked;
+
+        for(let i=0; i<files.length; i++) {
+            const f = files[i];
+            f.status = 'processing';
+            render(); 
+            await new Promise(r => setTimeout(r, 20));
+
+            try {
+                const blob = await processImage(f.file, f.format, q, mode, w, h, scale, lock);
+                f.procBlob = blob;
+                f.procSize = blob.size;
+                if(f.procUrl) URL.revokeObjectURL(f.procUrl);
+                f.procUrl = URL.createObjectURL(blob);
+                f.status = 'done';
+            } catch(e) { console.error(e); f.status = 'error'; }
+        }
+        render();
+    };
+
+    function processImage(file, format, q, mode, w, h, scale, lock) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let tw = img.width, th = img.height;
+
+                if(mode === 'pct') {
+                    if(scale !== 100) { tw = tw * (scale/100); th = th * (scale/100); }
+                } else {
+                    if(w > 0 && h > 0) {
+                        if(lock) { const ratio = Math.min(w/tw, h/th); tw *= ratio; th *= ratio; } 
+                        else { tw = w; th = h; }
+                    } else if(w > 0) {
+                        if(lock) th = (w/tw)*th; tw = w;
+                    } else if(h > 0) {
+                        if(lock) tw = (h/th)*tw; th = h;
+                    }
+                }
+                canvas.width = tw; canvas.height = th;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, tw, th);
+                canvas.toBlob(blob => { if(blob) resolve(blob); else reject(); }, format, q);
+            };
+            img.onerror = reject;
+            img.src = URL.createObjectURL(file);
+        });
+    }
+
+    // --- Misc Functions ---
+    window.downloadSingle = (id) => {
+        const item = files.find(f => f.id === id);
+        if(!item || !item.procBlob) return;
+        const a = document.createElement('a');
+        a.href = item.procUrl;
+        const ext = item.format.split('/')[1] === 'x-icon' ? 'ico' : item.format.split('/')[1];
+        a.download = `${item.name}.${ext}`;
+        a.click();
+    };
+
+    document.getElementById('btnZip').onclick = async () => {
+        const zip = new JSZip();
+        const btn = document.getElementById('btnZip');
+        const oldHtml = btn.innerHTML;
+        btn.innerHTML = `<i class="ph ph-spinner ph-spin"></i> <span>Zipping...</span>`;
+        files.forEach(f => {
+            if(f.status === 'done' && f.procBlob) {
+                const ext = f.format.split('/')[1] === 'x-icon' ? 'ico' : f.format.split('/')[1];
+                zip.file(`${f.name}.${ext}`, f.procBlob);
+            }
+        });
+        const content = await zip.generateAsync({type:'blob'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(content);
+        a.download = `converted_images_batch.zip`;
+        a.click();
+        btn.innerHTML = oldHtml;
+    };
+
+    function openSettings() { settingsModal.classList.add('open'); }
+    function closeSettings() { settingsModal.classList.remove('open'); }
+    function resetSettings() {
+        document.getElementById('sQuality').value = 80;
+        document.getElementById('qtyDisplay').innerText = '80%';
+        setMode('px');
+        document.getElementById('sWidth').value = '';
+        document.getElementById('sHeight').value = '';
+        document.getElementById('sScale').value = '';
+        document.getElementById('sLock').checked = true;
+        document.getElementById('sRename').value = '';
+    }
+    function applySettings() {
+        const pattern = document.getElementById('sRename').value;
+        if(pattern) applyRenamePattern(pattern);
+        closeSettings();
+        render();
+    }
+    function setMode(m) {
+        const pxBtn = document.getElementById('modePx');
+        const pctBtn = document.getElementById('modePct');
+        const divPx = document.getElementById('inputsPx');
+        const divPct = document.getElementById('inputsPct');
+        if(m === 'px') {
+            pxBtn.style.background = 'white'; pxBtn.style.color = 'var(--primary)';
+            pctBtn.style.background = 'transparent'; pctBtn.style.color = 'var(--text-sub)';
+            divPx.style.display = 'flex'; divPct.style.display = 'none';
+        } else {
+            pctBtn.style.background = 'white'; pctBtn.style.color = 'var(--primary)';
+            pxBtn.style.background = 'transparent'; pxBtn.style.color = 'var(--text-sub)';
+            divPct.style.display = 'flex'; divPx.style.display = 'none';
+        }
+    }
+    document.getElementById('sQuality').oninput = (e) => document.getElementById('qtyDisplay').innerText = e.target.value + '%';
+
+    function openCompare(id) {
+        const item = files.find(f => f.id === id);
+        if(!item || item.status !== 'done') return;
+        document.getElementById('imgOrig').src = item.origUrl;
+        document.getElementById('imgProc').src = item.procUrl;
+        document.getElementById('metaOrig').innerText = `Original: ${(item.file.size/1024).toFixed(1)} KB`;
+        document.getElementById('metaProc').innerText = `New: ${(item.procSize/1024).toFixed(1)} KB`;
+        const slider = document.querySelector('.slider-input');
+        slider.value = 50;
+        updateSlider(slider);
+        compareModal.classList.add('open');
+    }
+    function closeCompare() { compareModal.classList.remove('open'); }
+    window.updateSlider = (el) => {
+        const val = el.value;
+        document.querySelector('.img-after').style.clipPath = `inset(0 0 0 ${val}%)`;
+        document.querySelector('.slider-line').style.left = `${val}%`;
+        document.querySelector('.slider-dot').style.left = `${val}%`;
+    };
+    function applyRenamePattern(pattern) {
+        files.forEach((f, i) => {
+            const num = String(i+1).padStart(3, '0');
+            f.name = pattern.replace('###', num);
+        });
+    }
+    function clearAll() { files = []; render(); resetSettings(); }
+    function removeItem(id) { files = files.filter(f => f.id !== id); render(); }
+    function updateMeta(id, key, val) { const f = files.find(x => x.id === id); if(f) f[key] = val; }
+</script>
+</body>
+</html>
