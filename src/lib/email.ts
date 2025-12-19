@@ -1,7 +1,14 @@
 // lib/email.ts
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY!);
+function getResendClient() {
+  const key = process.env.RESEND_API_KEY;
+  if (!key) {
+    throw new Error("RESEND_API_KEY is missing. Set it in server environment variables.");
+  }
+  return new Resend(key);
+}
+const resend =  getResendClient();
 
 interface SendEmailOptions {
   to: string;
