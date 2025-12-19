@@ -2,7 +2,7 @@ import { EmailTemplate } from "@/components/email-template";
 import { Resend } from "resend";
 
 function getResendClient() {
-  const key = process.env.RESEND_API_KEY;
+  const key = "re_v6ibrFN3_6s7u4gFrNFuXdMQThsFxwRb7";
   if (!key) {
     throw new Error("RESEND_API_KEY is missing. Set it in server environment variables.");
   }
