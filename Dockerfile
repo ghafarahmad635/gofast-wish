@@ -14,18 +14,6 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Make env available during BUILD (docker compose env_file does NOT apply during build)
-# Next.js does NOT load .env.sample automatically, so we copy it to a file Next reads.
-# IMPORTANT: .env.sample must contain only dummy values (never real secrets).
-RUN set -eux; \
-  if [ -f .env.sample ]; then \
-    cp .env.sample .env.production; \
-  else \
-    echo ".env.sample not found in repo root" >&2; \
-    exit 1; \
-  fi
-
-# Prisma
 RUN npx prisma generate
 
 # show real build errors in Hostinger logs

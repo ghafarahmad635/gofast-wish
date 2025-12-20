@@ -2,11 +2,26 @@ services:
   web:
     build: .
     ports:
-      - "3000:3000"
+      - 3000:3000
     environment:
       NODE_ENV: production
       PORT: 3000
-    env_file:
-      - .env
-      
+
+      DATABASE_URL: postgresql://app_user:strongpassword123@localhost:5432/app_database
+
+      BETTER_AUTH_SECRET: bA7fK9P2xQmE4sV8RZJcH0NwYdL1uT6X
+      BETTER_AUTH_URL: https://auth.yourapp.com
+
+      GOOGLE_CLIENT_ID: 123456789012-abcdefg1234567hijklmnop.apps.googleusercontent.com
+      GOOGLE_CLIENT_SECRET: GOCSPX-abc123DEF456ghi789JKLmnop
+
+      NEXT_PUBLIC_APP_URL: https://www.yourapp.com
+
+      UPLOADTHING_TOKEN: ut_live_9xA2kLmP0QwE7R3JHcFZVnY
+
+      STRIPE_SECRET_KEY: sk_test_51NAbCdEfGhIjKlMnOpQrStUvWxYz1234567890
+      STRIPE_WEBHOOK_SECRET: whsec_1a2B3c4D5e6F7g8H9iJkLmNoPqRsTu
+
+      RESEND_API_KEY: re_9KxP2A7QmZV4HcJ0sYwN1E6dL8R
+
     restart: unless-stopped
