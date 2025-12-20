@@ -7,6 +7,6 @@ services:
       NODE_ENV: production
       PORT: 3000
     env_file:
-      - .env
+      - .env.sample
       
     restart: unless-stopped

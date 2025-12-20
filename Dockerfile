@@ -21,7 +21,7 @@ COPY . .
 # - NEVER put real secrets in .env.sample.
 RUN set -eux; \
   if [ -f .env.sample ]; then \
-    cp .env.sample .env.production; \
+    cp .env.sample .env; \
   else \
     echo "ERROR: .env.sample not found in repo root. Add it and commit it." >&2; \
     exit 1; \
