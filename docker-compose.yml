@@ -1,22 +1,12 @@
 services:
   web:
-    build:
-      context: .
-      args:
-        DATABASE_URL: "${DATABASE_URL}"
-        BETTER_AUTH_SECRET: "${BETTER_AUTH_SECRET}"
-        RESEND_API_KEY: "${RESEND_API_KEY}"
-        RESEND_FROM_EMAIL: "${RESEND_FROM_EMAIL}"
-        NEXT_PUBLIC_APP_URL: "${NEXT_PUBLIC_APP_URL}"
+    build: .
     ports:
       - "3000:3000"
     environment:
-      NODE_ENV: "production"
-      PORT: "3000"
-      HOSTNAME: "0.0.0.0"
-      DATABASE_URL: "${DATABASE_URL}"
-      BETTER_AUTH_SECRET: "${BETTER_AUTH_SECRET}"
-      RESEND_API_KEY: "${RESEND_API_KEY}"
-      RESEND_FROM_EMAIL: "${RESEND_FROM_EMAIL}"
-      NEXT_PUBLIC_APP_URL: "${NEXT_PUBLIC_APP_URL}"
+      NODE_ENV: production
+      PORT: 3000
+    env_file:
+      - .env.sample
+      
     restart: unless-stopped
