@@ -1,0 +1,3 @@
+gofastwish.com, www.gofastwish.com {
+    reverse_proxy web:3000
+}
