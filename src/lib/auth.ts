@@ -19,11 +19,12 @@ import { TrialEndedEmail } from "@/components/emails-templates/subscription/Tria
 import { SubscriptionCanceledEmail } from "@/components/emails-templates/subscription/SubscriptionCanceledEmail";
 import { PLAN_LIMITS, PLAN_TRIAL_DAYS } from "@/modules/upgrade/planConfig";
 import { ChangeEmailConfirmationEmail } from "@/components/emails-templates/ChangeEmailConfirmationEmail";
-import { ac, superadmin, user } from "./permissions";
+import { ac, superadmin } from "./permissions";
 
 import { decodeJwtPayload } from "./utils";
 import { ChangeEmailVerificationEmail } from "@/components/emails-templates/ChangeEmailVerificationEmail";
 import { AccountEmailVerificationEmail } from "@/components/emails-templates/AccountEmailVerificationEmail";
+import { STRIPE_CONFIG } from "@/config/billing";
 
 
 const stripeClient = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -234,91 +235,91 @@ export const auth = betterAuth({
         requireEmailVerification: false,
 
         plans: [
-          {
-            name: "standard",
-            priceId: "price_1SKYqAD8qR70pjFErK5C207r",
-            annualDiscountPriceId: "price_1SN4QaD8qR70pjFEL3eaU7HH",
-            freeTrial: {
-              days: PLAN_TRIAL_DAYS.standard,
-              onTrialStart: async (subscription) => {
-                try {
-                  const user = await db.user.findFirst({
-                    where: { id: subscription.referenceId },
-                  });
-                  if (!user) return;
+        {
+          name: "standard",
+          priceId: STRIPE_CONFIG.plans.standard.monthly,
+          annualDiscountPriceId: STRIPE_CONFIG.plans.standard.annual,
+          freeTrial: {
+            days: PLAN_TRIAL_DAYS.standard,
+            onTrialStart: async (subscription) => {
+              try {
+                const user = await db.user.findFirst({
+                  where: { id: subscription.referenceId },
+                });
+                if (!user) return;
 
-                  void sendEmail({
-                    to: user.email,
-                    subject: "Your Free Trial Has Started — GoFast Wish",
-                    react: TrialStartedEmail({ name: user.name ?? "User" }),
-                  });
-                } catch (err) {
-                  console.error("[Stripe:onTrialStart] Failed:", err);
-                }
-              },
-              onTrialEnd: async ({ subscription }) => {
-                try {
-                  const user = await db.user.findFirst({
-                    where: { id: subscription.referenceId },
-                  });
-                  if (!user) return;
-
-                  void sendEmail({
-                    to: user.email,
-                    subject: "Your Trial Has Ended — Upgrade Now",
-                    react: TrialEndedEmail({ name: user.name ?? "User" }),
-                  });
-                } catch (err) {
-                  console.error("[Stripe:onTrialEnd] Failed:", err);
-                }
-              },
+                void sendEmail({
+                  to: user.email,
+                  subject: "Your Free Trial Has Started — GoFast Wish",
+                  react: TrialStartedEmail({ name: user.name ?? "User" }),
+                });
+              } catch (err) {
+                console.error("[Stripe:onTrialStart] Failed:", err);
+              }
             },
-            limits: {
-              createWishes: PLAN_LIMITS.standard.wishes,
-              createHabits: PLAN_LIMITS.standard.habits,
+            onTrialEnd: async ({ subscription }) => {
+              try {
+                const user = await db.user.findFirst({
+                  where: { id: subscription.referenceId },
+                });
+                if (!user) return;
+
+                void sendEmail({
+                  to: user.email,
+                  subject: "Your Trial Has Ended — Upgrade Now",
+                  react: TrialEndedEmail({ name: user.name ?? "User" }),
+                });
+              } catch (err) {
+                console.error("[Stripe:onTrialEnd] Failed:", err);
+              }
             },
           },
-          {
-            name: "pro",
-            priceId: "price_1SKYsZD8qR70pjFEYXwZOCm0",
-            annualDiscountPriceId: "price_1SN4PED8qR70pjFE91x8HAu9",
-            freeTrial: {
-              days: PLAN_TRIAL_DAYS.pro,
-              onTrialStart: async (subscription) => {
-                try {
-                  const user = await db.user.findFirst({
-                    where: { id: subscription.referenceId },
-                  });
-                  if (!user) return;
+          limits: {
+            createWishes: PLAN_LIMITS.standard.wishes,
+            createHabits: PLAN_LIMITS.standard.habits,
+          },
+        },
+        {
+          name: "pro",
+          priceId: STRIPE_CONFIG.plans.pro.monthly,
+          annualDiscountPriceId: STRIPE_CONFIG.plans.pro.annual,
+          freeTrial: {
+            days: PLAN_TRIAL_DAYS.pro,
+            onTrialStart: async (subscription) => {
+              try {
+                const user = await db.user.findFirst({
+                  where: { id: subscription.referenceId },
+                });
+                if (!user) return;
 
-                  void sendEmail({
-                    to: user.email,
-                    subject: "Your Free Trial Has Started — GoFast Wish",
-                    react: TrialStartedEmail({ name: user.name ?? "User" }),
-                  });
-                } catch (err) {
-                  console.error("[Stripe:onTrialStart] Failed:", err);
-                }
-              },
-              onTrialEnd: async ({ subscription }) => {
-                try {
-                  const user = await db.user.findFirst({
-                    where: { id: subscription.referenceId },
-                  });
-                  if (!user) return;
+                void sendEmail({
+                  to: user.email,
+                  subject: "Your Free Trial Has Started — GoFast Wish",
+                  react: TrialStartedEmail({ name: user.name ?? "User" }),
+                });
+              } catch (err) {
+                console.error("[Stripe:onTrialStart] Failed:", err);
+              }
+            },
+            onTrialEnd: async ({ subscription }) => {
+              try {
+                const user = await db.user.findFirst({
+                  where: { id: subscription.referenceId },
+                });
+                if (!user) return;
 
-                  void sendEmail({
-                    to: user.email,
-                    subject: "Your Trial Has Ended — Upgrade Now",
-                    react: TrialEndedEmail({ name: user.name ?? "User" }),
-                  });
-                } catch (err) {
-                  console.error("[Stripe:onTrialEnd] Failed:", err);
-                }
-              },
+                void sendEmail({
+                  to: user.email,
+                  subject: "Your Trial Has Ended — Upgrade Now",
+                  react: TrialEndedEmail({ name: user.name ?? "User" }),
+                });
+              } catch (err) {
+                console.error("[Stripe:onTrialEnd] Failed:", err);
+              }
             },
           },
-        ],
+        },
+      ],
 
         onSubscriptionComplete: async ({ subscription, plan }) => {
           try {

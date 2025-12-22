@@ -1,14 +1,12 @@
 services:
   web:
     build: .
-    # We don't expose 3000 to the internet anymore. 
-    # Caddy will talk to it internally.
+    restart: unless-stopped
     environment:
       NODE_ENV: production
       PORT: 3000
     env_file:
       - .env
-    restart: unless-stopped
 
   caddy:
     image: caddy:latest
@@ -17,6 +15,7 @@ services:
       - "80:80"
       - "443:443"
     volumes:
+      # THE FIX IS HERE: Use ./ instead of /docker/gofast-wish/
       - ./Caddyfile:/etc/caddy/Caddyfile
       - caddy_data:/data
       - caddy_config:/config
