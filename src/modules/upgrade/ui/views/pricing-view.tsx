@@ -62,7 +62,7 @@ export default function PricingView() {
 
   return (
     <PricingSection
-      heading="Upgrade Your Plan"
+      heading="Upgrade Your Plan jhhjhj"
       description={
         loading
           ? "Checking your subscription..."
