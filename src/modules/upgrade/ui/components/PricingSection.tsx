@@ -44,7 +44,7 @@ export function PricingSection({
 
       <FrequencyToggle frequency={frequency} setFrequency={setFrequency} />
       <div>
-        envoirments now
+        envirment URL now now
         {process.env.NEXT_PUBLIC_APP_URL}
         {process.env.BETTER_AUTH_URL}
       </div>
