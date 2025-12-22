@@ -16,7 +16,7 @@ const TopHeader = async () => {
         {/* Left: Logo */}
         <Link href="/" className="flex items-center gap-2">
           <Image src="/logo.png" height={45} width={45} alt="GoFast Wish" />
-          <p className="text-lg font-semibold text-gray-800">GoFast Wish Updated</p>
+          <p className="text-lg font-semibold text-gray-800">GoFast Wish</p>
         </Link>
 
         {/* Right: Conditional Buttons */}
