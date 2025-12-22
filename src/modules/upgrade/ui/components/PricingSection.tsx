@@ -43,6 +43,10 @@ export function PricingSection({
       </div>
 
       <FrequencyToggle frequency={frequency} setFrequency={setFrequency} />
+      <div>
+        {process.env.NEXT_PUBLIC_APP_URL}
+        {process.env.BETTER_AUTH_URL}
+      </div>
 
       <div className="mx-auto grid w-full max-w-5xl grid-cols-1 gap-6 md:grid-cols-3">
         {plans.map((plan) => (
