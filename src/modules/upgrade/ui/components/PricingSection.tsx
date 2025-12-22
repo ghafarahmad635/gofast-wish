@@ -45,8 +45,8 @@ export function PricingSection({
       <FrequencyToggle frequency={frequency} setFrequency={setFrequency} />
       <div>
         envirment URL now now
-        {process.env.NEXT_PUBLIC_APP_URL}
-        {process.env.BETTER_AUTH_URL}
+        <p>NEXT_PUBLIC_APP_URL{process.env.NEXT_PUBLIC_APP_URL}</p>
+        <p> BETTER_AUTH_URL {process.env.BETTER_AUTH_URL}</p>
       </div>
 
       <div className="mx-auto grid w-full max-w-5xl grid-cols-1 gap-6 md:grid-cols-3">
