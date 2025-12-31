@@ -29,6 +29,8 @@ import { uploadFiles } from "@/lib/utils/uploadthingClient";
 import { useState } from "react";
 import { GoalGetOne } from "../../types";
 import { CommandSelect } from "@/components/command-select";
+import Tiptap from "@/components/Tiptap";
+import TiptapField from "@/components/Tiptap";
 
 interface GoalFormProps {
   onSuccess?: () => void;
@@ -169,17 +171,12 @@ const isCategoriesLoading = categories.isPending || categories.isFetching;
             </FormItem>
           )}
         />
+        
 
-        <FormField
-          name="description"
+        <TiptapField
           control={form.control}
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Description</FormLabel>
-              <FormControl><Textarea  className="bg-white"{...field} placeholder="Short summary..." /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
+          name="description"
+          label="Description"
         />
 
         <FormField

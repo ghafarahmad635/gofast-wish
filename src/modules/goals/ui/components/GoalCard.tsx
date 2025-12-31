@@ -33,18 +33,18 @@ export const GoalCard: React.FC<GoalCardProps> = ({
       key={goal.id}
       className="group relative overflow-hidden border border-gray-200 rounded-lg shadow-sm 
                 hover:shadow-lg transition-all duration-300 w-full max-w-full
-                bg-white/90 backdrop-blur-sm p-0 m-0 gap-4"
+                bg-white/90 backdrop-blur-sm p-0 m-0 gap-1"
     >
 
      
-      <div className="relative w-full aspect-[16/9] overflow-hidden rounded-t-lg">
+      <div className="relative w-full aspect-[16/9] overflow-hidden rounded-t-lg mb-3">
         {goal.featuredImage?.url ? (
           <Image
             src={goal.featuredImage.url}
             alt={goal.title}
             fill
             className={`object-cover transition-transform duration-500 group-hover:scale-105 ${
-              isCompleted ? "grayscale-[40%] brightness-90" : ""
+              isCompleted ? "grayscale-40 brightness-90" : ""
             }`}
           />
         ) : (
@@ -74,7 +74,11 @@ export const GoalCard: React.FC<GoalCardProps> = ({
 
       {/* Body */}
       <CardContent className="px-5 text-sm text-gray-600 space-y-3">
-        <p className="leading-relaxed text-gray-700">{goal.description}</p>
+        <div
+          className="rt"
+          dangerouslySetInnerHTML={{ __html: goal.description ?? "" }}
+        />
+
 
         <div className="flex flex-wrap justify-between items-center text-xs text-gray-500 gap-2 border-t py-2">
           <div className="flex items-center gap-1">
