@@ -233,8 +233,11 @@ export default function HabitCard({ habit, mode, onEdit, onDelete }: Props) {
           </CardHeader>
 
           {/* Body */}
-          <CardContent className="space-y-4 overflow-hidden break-words max-w-full">
-            <p className="text-sm text-gray-600 line-clamp-2">{desc || '—'}</p>
+          <CardContent className="space-y-4 overflow-hidden wrap-break-words max-w-full">
+           <div
+          className="rt"
+          dangerouslySetInnerHTML={{ __html: habit.description ?? "" }}
+        />
 
             <Progress value={progress} className="h-2 rounded-full" />
             <div className="flex justify-between mt-1 text-xs text-gray-500 min-w-0 flex-wrap gap-2">

@@ -27,6 +27,7 @@ import { habitCreateSchema, HabitCreateSchema } from "../../schmas";
 import { DatePickerField } from "./date-picker-field";
 import { toast } from "sonner";
 import { HabitGetOne } from "../../types";
+import TiptapField from "@/components/Tiptap";
 
 interface HabitFormProps {
   onSuccess?: () => void;
@@ -158,24 +159,12 @@ const HabitForm = ({ onSuccess, onCancel, initialValues }: HabitFormProps) => {
         />
 
         {/* Description */}
-        <FormField
-          name="description"
-          control={form.control}
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Description</FormLabel>
-              <FormControl>
-                <Textarea
-                  {...field}
-                  rows={3}
-                  className="w-full bg-white"
-                  placeholder="Describe your habit (optional)"
+        
+        <TiptapField
+                  control={form.control}
+                  name="description"
+                  label="Description"
                 />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
 
         {/* Frequency */}
         <FormField
