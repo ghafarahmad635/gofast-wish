@@ -1,6 +1,6 @@
 services:
   web:
-    build: .
+    build: ..
     env_file:
       - /docker/gofast-wish/.env
     restart: unless-stopped
