@@ -1,6 +1,7 @@
 services:
   web:
-    build: .
+    build: ..
+    dockerfile: dockerfiles/Dockerfile-vps
     env_file:
       - /docker/gofast-wish/.env
     restart: unless-stopped
