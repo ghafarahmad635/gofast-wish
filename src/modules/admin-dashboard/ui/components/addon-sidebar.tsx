@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { Separator } from '@/components/ui/separator';
 
 import DashboardUserButton from '@/modules/dashboard/ui/components/dashboard-user-button';
-import { Home, Users, Puzzle, CreditCard, ReceiptText, FolderTree } from 'lucide-react';
+import { Home, Users, Puzzle, CreditCard, ReceiptText, FolderTree, Layers } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { usePathname } from 'next/navigation';
 
@@ -17,7 +17,7 @@ const mainMenu = [
   { label: 'Subscriptions', href: '/admin/subscriptions', icon: CreditCard },
   { label: 'Orders', href: '/admin/orders', icon: ReceiptText },
   { label: 'Goals Categories', href: '/admin/goals-categories', icon: FolderTree },
-  { label: 'Manage Plans', href: '/admin/manage-plans', icon: FolderTree },
+  { label: 'Manage Plans', href: '/admin/manage-plans', icon: Layers  },
 ];
 
 
