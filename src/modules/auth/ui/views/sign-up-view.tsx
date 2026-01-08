@@ -59,9 +59,13 @@ const SignUpView = () => {
         callbackURL: "/verify-otp?email=" + encodeURIComponent(data.email),
       },
       {
-        onSuccess: () => {
+        onSuccess: async () => {
          
           setError(null)
+          await authClient.emailOtp.sendVerificationOtp({
+            email: data.email,
+            type: "email-verification",
+          });
           router.push(`/verify-otp?email=${encodeURIComponent(data.email)}`);
         },
         onError: ({ error }) => {

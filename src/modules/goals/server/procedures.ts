@@ -11,8 +11,9 @@ import {
   MIN_PAGE_SIZE,
 } from "@/constants";
 import { Prisma } from "@prisma/client";
+import { maybeDeleteOldMedia } from "./mediaHelpers";
 
-const utapi = new UTApi();
+export const utapi = new UTApi();
 
 export const goalsRouter = createTRPCRouter({
   getMany: protectedProcedure
@@ -204,14 +205,20 @@ export const goalsRouter = createTRPCRouter({
     }),
 
   update: protectedProcedure
-    .input(goalUpdateSchema)
-    .mutation(async ({ ctx, input }) => {
-      try {
-        console.log("Updating goal with image ID:", input.featuredImageId);
+  .input(goalUpdateSchema)
+  .mutation(async ({ ctx, input }) => {
+    try {
+      console.log("Updating goal with image ID:", input.featuredImageId);
 
-        const existingGoal = await db.goal.findFirst({
+      const updatedGoal = await db.$transaction(async (tx) => {
+        const existingGoal = await tx.goal.findFirst({
           where: { id: input.id, userId: ctx.auth.user.id },
-          include: { featuredImage: true },
+          select: {
+            id: true,
+            userId: true,
+            featuredImageId: true,
+            categoryId: true,
+          },
         });
 
         if (!existingGoal) {
@@ -222,8 +229,9 @@ export const goalsRouter = createTRPCRouter({
         }
 
         if (input.categoryId) {
-          const existingCategory = await db.goalCategory.findUnique({
+          const existingCategory = await tx.goalCategory.findUnique({
             where: { id: input.categoryId },
+            select: { id: true },
           });
 
           if (!existingCategory) {
@@ -234,45 +242,22 @@ export const goalsRouter = createTRPCRouter({
           }
         }
 
-        let featuredImageId = existingGoal.featuredImageId;
+        const oldFeaturedImageId = existingGoal.featuredImageId;
 
-        if (
-          input.featuredImageId &&
-          input.featuredImageId !== existingGoal.featuredImageId
-        ) {
-          if (existingGoal.featuredImage) {
-            const oldUrl = existingGoal.featuredImage.url;
-            const key = oldUrl?.split("/f/")[1];
-            if (key) {
-              try {
-                await utapi.deleteFiles(key);
-              } catch (err) {
-                console.warn("⚠️ Failed to delete old file:", err);
-              }
-            }
-            await db.media.delete({ where: { id: existingGoal.featuredImage.id } });
-          }
+        // Decide the new featured image id
+        // - if input.featuredImageId is undefined, keep current
+        // - if input.featuredImageId is null or empty (depending on your schema), clear it
+        // - if input.featuredImageId is a string, set it
+        let newFeaturedImageId: string | null = oldFeaturedImageId;
 
-          featuredImageId = input.featuredImageId;
+        // If your schema uses optional field, you may have to treat "undefined" vs "null"
+        // Here: if caller sends featuredImageId explicitly
+        if (typeof input.featuredImageId !== "undefined") {
+          newFeaturedImageId = input.featuredImageId ? input.featuredImageId : null;
         }
 
-        if (!input.featuredImageId && existingGoal.featuredImageId) {
-          if (existingGoal.featuredImage?.url) {
-            const key = existingGoal.featuredImage.url.split("/f/")[1];
-            if (key) {
-              try {
-                await utapi.deleteFiles(key);
-              } catch (err) {
-                console.warn("⚠️ Failed to delete old file:", err);
-              }
-            }
-          }
-
-          await db.media.delete({ where: { id: existingGoal.featuredImageId } });
-          featuredImageId = null;
-        }
-
-        const updatedGoal = await db.goal.update({
+        // Update goal
+        const goal = await tx.goal.update({
           where: { id: input.id },
           data: {
             title: input.title,
@@ -280,39 +265,46 @@ export const goalsRouter = createTRPCRouter({
             categoryId: input.categoryId ?? null,
             targetDate: input.targetDate ? new Date(input.targetDate) : null,
             priority: input.priority ? Number(input.priority) : null,
-            featuredImageId,
+            featuredImageId: newFeaturedImageId,
           },
           include: {
             featuredImage: { select: { url: true } },
-            category: {
-              select: {
-                id: true,
-                name: true,
-                slug: true,
-              },
-            },
+            category: { select: { id: true, name: true, slug: true } },
           },
         });
 
-        return updatedGoal;
-      } catch (error) {
-        console.error("❌ Failed to update goal:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to update goal. Please try again later.",
-        });
-      }
-    }),
+        // Cleanup: only if the image changed (or was removed)
+        if (oldFeaturedImageId && oldFeaturedImageId !== newFeaturedImageId) {
+          
+          await maybeDeleteOldMedia(tx, oldFeaturedImageId);
+        }
+
+        return goal;
+      });
+
+      return updatedGoal;
+    } catch (error) {
+      console.error("❌ Failed to update goal:", error);
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Failed to update goal. Please try again later.",
+      });
+    }
+  }),
 
   remove: protectedProcedure
-    .input(z.object({ id: z.string() }))
-    .mutation(async ({ ctx, input }) => {
-      console.log("🗑️ Attempting to delete goal with ID:", input.id);
+  .input(z.object({ id: z.string() }))
+  .mutation(async ({ ctx, input }) => {
+    console.log("🗑️ Attempting to delete goal with ID:", input.id);
 
-      try {
-        const goal = await db.goal.findFirst({
+    try {
+      await db.$transaction(async (tx) => {
+        const goal = await tx.goal.findFirst({
           where: { id: input.id, userId: ctx.auth.user.id },
-          include: { featuredImage: true },
+          select: {
+            id: true,
+            featuredImageId: true,
+          },
         });
 
         if (!goal) {
@@ -322,42 +314,30 @@ export const goalsRouter = createTRPCRouter({
           });
         }
 
-        if (goal.featuredImage) {
-          const oldUrl = goal.featuredImage.url;
-          const key = oldUrl?.split("/f/")[1];
+        const oldFeaturedImageId = goal.featuredImageId;
 
-          if (key) {
-            try {
-              await utapi.deleteFiles(key);
-              console.log("✅ Deleted file from UploadThing:", key);
-            } catch (err) {
-              console.warn("⚠️ Failed to delete file from UploadThing:", err);
-            }
-          }
-
-          try {
-            await db.media.delete({ where: { id: goal.featuredImage.id } });
-            console.log("✅ Deleted media record:", goal.featuredImage.id);
-          } catch (err) {
-            console.warn("⚠️ Failed to delete media record:", err);
-          }
-        }
-
-        await db.goal.delete({
+        // 1) Delete the goal first (removes the reference)
+        await tx.goal.delete({
           where: { id: goal.id },
         });
 
-        console.log("✅ Goal deleted successfully:", goal.id);
+        // 2) Then attempt to delete media safely (will skip system defaults or shared media)
+        if (oldFeaturedImageId) {
+          await maybeDeleteOldMedia(tx, oldFeaturedImageId);
+        }
+      });
 
-        return { success: true, message: "Goal deleted successfully" };
-      } catch (error) {
-        console.error("❌ Failed to delete goal:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to delete goal. Please try again later.",
-        });
-      }
-    }),
+      console.log("✅ Goal deleted successfully:", input.id);
+
+      return { success: true, message: "Goal deleted successfully" };
+    } catch (error) {
+      console.error("❌ Failed to delete goal:", error);
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Failed to delete goal. Please try again later.",
+      });
+    }
+  }),
 
   getManyByStatus: protectedProcedure
     .input(
