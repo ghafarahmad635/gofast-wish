@@ -1,87 +1,100 @@
-"use client"
-import React, { useState } from "react"
-import { CheckCircleIcon, StarIcon } from "lucide-react"
-import { Button } from "@/components/ui/button"
+"use client";
+
+import React, { useMemo, useState } from "react";
+import { CheckCircleIcon, StarIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip"
-import { cn } from "@/lib/utils"
-import { toast } from "sonner"
-import { authClient } from "@/lib/auth-client.ts"
-import type { FREQUENCY } from "./FrequencyToggle"
+} from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
-export type Plan = {
-  name: string
-  info: string
-  price: { monthly: number; yearly: number }
-  features: { text: string; tooltip?: string }[]
-  btn: { text: string }
-  highlighted?: boolean,
-   trialDays?: number
-}
+import type { FREQUENCY } from "./FrequencyToggle";
+import { BillingPlanGetOne } from "../../types";
+import { authClient } from "@/lib/auth-client.ts";
 
 type PricingCardProps = {
-  plan: Plan
-  frequency?: FREQUENCY
-  isActive?: boolean
-  activeSubscriptionId?: string | null,
-  
-} & React.ComponentProps<"div">
+  plan: BillingPlanGetOne;
+  frequency?: FREQUENCY;
+  isActive?: boolean;
+  activeSubscriptionId?: string | null;
+  disabled?: boolean;
+} 
 
 export function PricingCard({
   plan,
   frequency = "monthly",
-  className,
   isActive = false,
   activeSubscriptionId = null,
-  ...props
+  disabled 
+  
+
 }: PricingCardProps) {
-  const [loading, setLoading] = useState(false)
-  const isFree = plan.name.toLowerCase() === "free"
+  const [loading, setLoading] = useState(false);
+
+  // ✅ identity should be based on key, not name
+  const isFree = plan.key.toLowerCase() === "free";
+
+  const discount = useMemo(() => {
+    const monthly = plan.price.monthly;
+    const yearly = plan.price.yearly;
+    if (!yearly || !monthly) return 0;
+    const yearlyEquivalent = monthly * 12;
+    if (yearlyEquivalent <= 0) return 0;
+    return Math.round(((yearlyEquivalent - yearly) / yearlyEquivalent) * 100);
+  }, [plan.price.monthly, plan.price.yearly]);
+
+  const priceCents = frequency === "monthly" ? plan.price.monthly : plan.price.yearly;
+  const priceLabel =
+  isFree || !priceCents
+    ? "$0"
+    : new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+      }).format(priceCents / 100);
 
   const handleSubscribe = async () => {
-    if (isFree) return // free plan handled in app
+    if (isFree) return;
 
     try {
-      setLoading(true)
+      setLoading(true);
 
-      // ⚡ If user already subscribed, redirect to billing portal instead of re-subscribing
+      // If current plan is active and has sub id -> billing portal
       if (isActive && activeSubscriptionId) {
-        toast.info("Redirecting to your billing portal...")
+        toast.info("Redirecting to billing portal...");
 
         const { data, error } = await authClient.subscription.billingPortal({
-         
           returnUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/upgrade`,
-          
-         
-        })
+        });
 
         if (error) {
-          console.error("❌ Failed to open billing portal:", error)
-          toast.error("Unable to open billing portal.")
-          return
+          console.error("Billing portal error:", error);
+          toast.error("Unable to open billing portal.");
+          return;
         }
 
-        if (data?.url) {
-          window.location.href = data.url
-        } else {
-          toast.error("Billing portal link unavailable.")
-        }
+        if (data?.url) window.location.href = data.url;
+        else toast.error("Billing portal link unavailable.");
 
-        return // ✅ Stop here, don't continue to upgrade flow
+        return;
       }
 
-      // 🛒 Otherwise, start checkout session
-      toast.info("Redirecting to checkout...")
+      toast.info("Redirecting to checkout...");
 
       const { data, error } = await authClient.subscription.upgrade(
         {
-          plan: plan.name.toLowerCase(),
+          // ✅ Better Auth expects the plan identifier.
+          // You mapped StripePlan.name = Plan.key on server.
+          plan: plan.key.toLowerCase(),
+
           annual: frequency === "yearly",
+
+          // ✅ pass subscriptionId when switching plans if user already has one
           subscriptionId: activeSubscriptionId ?? undefined,
+
           successUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/upgrade`,
           cancelUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/upgrade`,
         },
@@ -89,43 +102,42 @@ export function PricingCard({
           onSuccess: () => {
             toast.success("Checkout initiated")
           },
-          onError: ({ error }) =>
-            console.error("❌ Checkout initiation failed:", error),
+          onError: ({ error }) => console.error("Checkout initiation failed:", error),
         }
-      )
+      );
 
       if (error) {
-        toast.error(error.message || "Failed to start subscription.")
-        return
+        toast.error(error.message || "Failed to start subscription.");
+        return;
       }
 
-     
+      // If Better Auth returns a URL (depends on config), redirect explicitly
+      if ((data as any)?.url) {
+        window.location.href = (data as any).url;
+      }
     } catch (err) {
-      console.error("⚠️ Error during checkout:", err)
-      toast.error("Something went wrong. Please try again.")
+      console.error("Checkout error:", err);
+      toast.error("Something went wrong. Please try again.");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
-  // 🎯 Calculate yearly discount badge
-  const discount =
-    plan.price.yearly > 0
-      ? Math.round(
-          ((plan.price.monthly * 12 - plan.price.yearly) /
-            (plan.price.monthly * 12)) *
-            100
-        )
-      : 0
+  const buttonText = useMemo(() => {
+    if (loading) return "Redirecting...";
+    if (isFree) return "Current Plan";
+    if (isActive) return "Manage Subscription";
+    return `Upgrade to ${plan.name}`;
+  }, [loading, isFree, isActive, plan.name]);
 
   return (
     <div
       className={cn(
-        "relative flex w-full bg-white flex-col rounded-lg border shadow transition-transform",
+        "relative flex w-full flex-col rounded-lg border shadow transition-transform bg-white",
         plan.highlighted && "scale-105",
-        className
+        
       )}
-      {...props}
+     
     >
       {/* Header */}
       <div
@@ -157,16 +169,13 @@ export function PricingCard({
         <p className="font-normal text-muted-foreground text-sm">{plan.info}</p>
 
         <h3 className="mt-6 mb-2 flex items-end gap-1">
-          <span className="font-extrabold text-3xl">
-            ${plan.price[frequency]}
-          </span>
+          <span className="font-extrabold text-3xl"> {priceLabel}</span>
           <span className="text-muted-foreground">
-            {plan.name !== "Free"
-              ? `/${frequency === "monthly" ? "month" : "year"}`
-              : ""}
+            {!isFree ? `/${frequency === "monthly" ? "month" : "year"}` : ""}
           </span>
         </h3>
-        {plan.trialDays && plan.trialDays > 0 && !isActive && (
+
+        {!isFree && (plan.trialDays ?? 0) > 0 && !isActive && (
           <p className="text-xs font-medium text-green-600 mb-2">
             {plan.trialDays}-day free trial included
           </p>
@@ -210,17 +219,21 @@ export function PricingCard({
       >
         <Button
           className="w-full"
-          variant={isActive ? "outline" : plan.highlighted ? "default" : "outline"}
+          variant={
+            isFree
+              ? "outline"
+              : isActive
+              ? "outline"
+              : plan.highlighted
+              ? "default"
+              : "outline"
+          }
           onClick={handleSubscribe}
-          disabled={loading || isFree}
+          disabled={disabled || loading || isFree}
         >
-          {loading
-            ? "Redirecting..."
-            : isActive
-            ? "Manage Subscription"
-            : plan.btn.text}
+          {buttonText}
         </Button>
       </div>
     </div>
-  )
+  );
 }

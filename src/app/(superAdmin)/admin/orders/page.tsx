@@ -6,7 +6,7 @@ import { getQueryClient, trpc } from '@/trpc/server';
 import { dehydrate, HydrationBoundary } from '@tanstack/react-query'
 import { SearchParams } from 'nuqs/server';
 
-import React, { Suspense } from 'react'
+import { Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary';
 interface Props {
   searchParams: Promise<SearchParams>
@@ -16,7 +16,7 @@ const page = async({ searchParams }: Props) => {
    const queryClient=getQueryClient();
     void queryClient.prefetchQuery(trpc.adminOrders.getMany.queryOptions({...filter}))
   return (
-    <article className="p-4 gap-y-2 flex-grow flex flex-col">
+    <article className="p-4 gap-y-2 grow flex flex-col">
        <OrdersFilters/>
       <HydrationBoundary state={dehydrate(queryClient)}>
          <Suspense fallback={<AdminOrdersViewLoadingState />}>

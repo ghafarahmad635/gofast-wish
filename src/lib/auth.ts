@@ -1,35 +1,21 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { admin as adminPlugin, emailOTP } from "better-auth/plugins";
-import { stripe } from "@better-auth/stripe";
-import Stripe from "stripe";
 import { createAuthMiddleware } from "better-auth/api";
-
 import { db } from "./prisma";
 import { sendEmail } from "./email";
-
 import { LoginOtpEmail } from "@/components/emails-templates/LoginOtpEmail";
 import { ResetPasswordEmail } from "@/components/emails-templates/ResetPasswordEmail";
 import { SignupOtpEmail } from "@/components/emails-templates/SignupOtpEmail";
 import { WelcomeEmail } from "@/components/emails-templates/WelcomeEmail";
-import { SubscriptionActivatedEmail } from "@/components/emails-templates/subscription/SubscriptionActivatedEmail";
-import { PaymentReceiptEmail } from "@/components/emails-templates/subscription/PaymentReceiptEmail";
-import { TrialStartedEmail } from "@/components/emails-templates/subscription/TrialStartedEmail";
-import { TrialEndedEmail } from "@/components/emails-templates/subscription/TrialEndedEmail";
-import { SubscriptionCanceledEmail } from "@/components/emails-templates/subscription/SubscriptionCanceledEmail";
-import { PLAN_LIMITS, PLAN_TRIAL_DAYS } from "@/modules/upgrade/planConfig";
+
 import { ChangeEmailConfirmationEmail } from "@/components/emails-templates/ChangeEmailConfirmationEmail";
 import { ac, superadmin } from "./permissions";
 
 import { decodeJwtPayload } from "./utils";
 import { ChangeEmailVerificationEmail } from "@/components/emails-templates/ChangeEmailVerificationEmail";
 import { AccountEmailVerificationEmail } from "@/components/emails-templates/AccountEmailVerificationEmail";
-import { STRIPE_CONFIG } from "@/config/billing";
-
-
-const stripeClient = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-11-17.clover",
-});
+import { stripePlugin } from "./stripe-plugin";
 
 export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL, 
@@ -147,225 +133,9 @@ export const auth = betterAuth({
   impersonationSessionDuration: 60 * 60 * 24,
   }),
 
-    stripe({
-      stripeClient,
-      stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET!,
-      createCustomerOnSignUp: true,
+    stripePlugin,
 
-      onCustomerCreate: async ({ stripeCustomer, user }) => {
-        try {
-          await db.user.update({
-            where: { id: user.id },
-            data: { stripeCustomerId: stripeCustomer.id },
-          });
-        } catch (err) {
-          console.error("[Stripe:onCustomerCreate] Failed:", err);
-        }
-      },
-
-      onEvent: async (event) => {
-        if (event.type !== "invoice.paid") return;
-
-        try {
-          const invoice = event.data.object as Stripe.Invoice;
-          const customerId = invoice.customer as string;
-
-          const user = await db.user.findFirst({
-            where: { stripeCustomerId: customerId },
-          });
-          if (!user) return;
-
-          let subscriptionId: string | null = null;
-
-          const parent: any = (invoice as any).parent;
-          if (parent?.type === "subscription_details") {
-            subscriptionId = parent.subscription_details?.subscription ?? null;
-          }
-
-          if (!subscriptionId) {
-            for (const line of invoice.lines.data as any[]) {
-              const subFromLine =
-                line?.parent?.subscription_item_details?.subscription;
-              if (subFromLine) {
-                subscriptionId = subFromLine;
-                break;
-              }
-            }
-          }
-
-          if (!subscriptionId) {
-            console.warn(
-              "[Stripe:onEvent] invoice.paid: no subscription id found on invoice",
-              invoice.id,
-            );
-          }
-
-          await db.order.create({
-            data: {
-              userId: user.id,
-              stripeInvoiceId: invoice.id,
-              stripeSubscriptionId: subscriptionId,
-              stripeCustomerId: customerId,
-              amount: (invoice.amount_paid ?? 0) / 100,
-              currency: invoice.currency || "usd",
-              status: invoice.status ?? "paid",
-              hostedInvoiceUrl: invoice.hosted_invoice_url || null,
-              invoicePdfUrl: invoice.invoice_pdf || null,
-              customerEmail: invoice.customer_email || user.email,
-              customerName: invoice.customer_name || user.name,
-            },
-          });
-
-          void sendEmail({
-            to: user.email,
-            subject: "Payment Receipt — GoFast Wish",
-            react: PaymentReceiptEmail({
-              name: user.name ?? "Valued Customer",
-              amount: (invoice.amount_paid ?? 0) / 100,
-              date: new Date(invoice.created * 1000).toLocaleDateString(),
-              invoiceUrl: invoice.hosted_invoice_url,
-            }),
-          });
-        } catch (err) {
-          console.error("[Stripe:onEvent] invoice.paid handler failed:", err);
-        }
-      },
-
-      subscription: {
-        enabled: true,
-        requireEmailVerification: false,
-
-        plans: [
-        {
-          name: "standard",
-          priceId: STRIPE_CONFIG.plans.standard.monthly,
-          annualDiscountPriceId: STRIPE_CONFIG.plans.standard.annual,
-          freeTrial: {
-            days: PLAN_TRIAL_DAYS.standard,
-            onTrialStart: async (subscription) => {
-              try {
-                const user = await db.user.findFirst({
-                  where: { id: subscription.referenceId },
-                });
-                if (!user) return;
-
-                void sendEmail({
-                  to: user.email,
-                  subject: "Your Free Trial Has Started — GoFast Wish",
-                  react: TrialStartedEmail({ name: user.name ?? "User" }),
-                });
-              } catch (err) {
-                console.error("[Stripe:onTrialStart] Failed:", err);
-              }
-            },
-            onTrialEnd: async ({ subscription }) => {
-              try {
-                const user = await db.user.findFirst({
-                  where: { id: subscription.referenceId },
-                });
-                if (!user) return;
-
-                void sendEmail({
-                  to: user.email,
-                  subject: "Your Trial Has Ended — Upgrade Now",
-                  react: TrialEndedEmail({ name: user.name ?? "User" }),
-                });
-              } catch (err) {
-                console.error("[Stripe:onTrialEnd] Failed:", err);
-              }
-            },
-          },
-          limits: {
-            createWishes: PLAN_LIMITS.standard.wishes,
-            createHabits: PLAN_LIMITS.standard.habits,
-          },
-        },
-        {
-          name: "pro",
-          priceId: STRIPE_CONFIG.plans.pro.monthly,
-          annualDiscountPriceId: STRIPE_CONFIG.plans.pro.annual,
-          freeTrial: {
-            days: PLAN_TRIAL_DAYS.pro,
-            onTrialStart: async (subscription) => {
-              try {
-                const user = await db.user.findFirst({
-                  where: { id: subscription.referenceId },
-                });
-                if (!user) return;
-
-                void sendEmail({
-                  to: user.email,
-                  subject: "Your Free Trial Has Started — GoFast Wish",
-                  react: TrialStartedEmail({ name: user.name ?? "User" }),
-                });
-              } catch (err) {
-                console.error("[Stripe:onTrialStart] Failed:", err);
-              }
-            },
-            onTrialEnd: async ({ subscription }) => {
-              try {
-                const user = await db.user.findFirst({
-                  where: { id: subscription.referenceId },
-                });
-                if (!user) return;
-
-                void sendEmail({
-                  to: user.email,
-                  subject: "Your Trial Has Ended — Upgrade Now",
-                  react: TrialEndedEmail({ name: user.name ?? "User" }),
-                });
-              } catch (err) {
-                console.error("[Stripe:onTrialEnd] Failed:", err);
-              }
-            },
-          },
-        },
-      ],
-
-        onSubscriptionComplete: async ({ subscription, plan }) => {
-          try {
-            const user = await db.user.findFirst({
-              where: { id: subscription.referenceId },
-            });
-            if (!user) return;
-
-            void sendEmail({
-              to: user.email,
-              subject: `Your ${plan.name} Plan is Active — GoFast Wish`,
-              react: SubscriptionActivatedEmail({
-                title: "Subscription Activated",
-                message: `Your ${plan.name} plan is now active. Thank you for joining GoFast Wish.`,
-              }),
-            });
-          } catch (err) {
-            console.error("[Stripe:onSubscriptionComplete] Failed:", err);
-          }
-        },
-
-        onSubscriptionCancel: async ({ subscription }) => {
-          try {
-            const user = await db.user.findFirst({
-              where: { id: subscription.referenceId },
-            });
-            if (!user) return;
-
-            void sendEmail({
-              to: user.email,
-              subject: "Subscription Canceled — GoFast Wish",
-              react: SubscriptionCanceledEmail({
-                name: user.name ?? "User",
-                message:
-                  "We're sorry to see you go. You can reactivate anytime from your dashboard.",
-              }),
-            });
-          } catch (err) {
-            console.error("[Stripe:onSubscriptionCancel] Failed:", err);
-          }
-        },
-      },
-    }),
-
-    // IMPORTANT: do not override default email verification
+  
     emailOTP({
       overrideDefaultEmailVerification: true,
       sendVerificationOnSignUp: true,
@@ -410,6 +180,69 @@ export const auth = betterAuth({
             if (existing?.demoSeededAt) return;
 
             await db.$transaction(async (tx) => {
+              const [imgWelcome, imgDashboard, imgProfile, imgHabit] = await Promise.all([
+                tx.media.upsert({
+                  where: { key: "goal_welcome" },
+                  update: { url: "/default-goals/goal-welcome.webp", isSystem: true },
+                  create: {
+                    key: "goal_welcome",
+                    url: "/default-goals/goal-welcome.webp",
+                    fileName: "goal-welcome.webp",
+                    fileType: "image",
+                    fileSize: 0,
+                    mimeType: "image/webp",
+                    extension: "webp",
+                    uploadedBy: null,
+                    isSystem: true,
+                  },
+                }),
+                tx.media.upsert({
+                  where: { key: "goal_dashboard" },
+                  update: { url: "/default-goals/goal-dashboard.webp", isSystem: true },
+                  create: {
+                    key: "goal_dashboard",
+                    url: "/default-goals/goal-dashboard.webp",
+                    fileName: "goal-dashboard.webp",
+                    fileType: "image",
+                    fileSize: 0,
+                    mimeType: "image/webp",
+                    extension: "webp",
+                    uploadedBy: null,
+                    isSystem: true,
+                  },
+                }),
+                tx.media.upsert({
+                  where: { key: "goal_profile" },
+                  update: { url: "/default-goals/goal-profile.webp", isSystem: true },
+                  create: {
+                    key: "goal_profile",
+                    url: "/default-goals/goal-profile.webp",
+                    fileName: "goal-profile.webp",
+                    fileType: "image",
+                    fileSize: 0,
+                    mimeType: "image/webp",
+                    extension: "webp",
+                    uploadedBy: null,
+                    isSystem: true,
+                  },
+                }),
+                tx.media.upsert({
+                  where: { key: "goal_habit" },
+                  update: { url: "/default-goals/goal-habit.webp", isSystem: true },
+                  create: {
+                    key: "goal_habit",
+                    url: "/default-goals/goal-habit.webp",
+                    fileName: "goal-habit.webp",
+                    fileType: "image",
+                    fileSize: 0,
+                    mimeType: "image/webp",
+                    extension: "webp",
+                    uploadedBy: null,
+                    isSystem: true,
+                  },
+                }),
+              ]);
+              
               await tx.goal.createMany({
                 data: [
                   {
@@ -418,6 +251,7 @@ export const auth = betterAuth({
                     priority: 2,
                     isCompleted: false,
                     userId: user.id,
+                     featuredImageId: imgWelcome.id,
                   },
                   {
                     title: "Explore Your Dashboard",
@@ -426,6 +260,7 @@ export const auth = betterAuth({
                     priority: 3,
                     isCompleted: false,
                     userId: user.id,
+                    featuredImageId: imgDashboard.id,
                   },
                   {
                     title: "Customize Your Profile",
@@ -433,6 +268,7 @@ export const auth = betterAuth({
                     priority: 3,
                     isCompleted: false,
                     userId: user.id,
+                     featuredImageId: imgProfile.id,
                   },
                   {
                     title: "Start Your First Habit 🚀",
@@ -440,6 +276,7 @@ export const auth = betterAuth({
                     priority: 1,
                     isCompleted: false,
                     userId: user.id,
+                     featuredImageId: imgHabit.id,
                   },
                 ],
               });

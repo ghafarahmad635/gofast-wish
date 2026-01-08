@@ -15,7 +15,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import DatePickerField from "./date-picker-field";
 import {
   Select,
@@ -29,7 +28,6 @@ import { uploadFiles } from "@/lib/utils/uploadthingClient";
 import { useState } from "react";
 import { GoalGetOne } from "../../types";
 import { CommandSelect } from "@/components/command-select";
-import Tiptap from "@/components/Tiptap";
 import TiptapField from "@/components/Tiptap";
 
 interface GoalFormProps {

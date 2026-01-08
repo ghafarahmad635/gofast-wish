@@ -40,6 +40,7 @@ model User {
   stripeCustomerId String?
   orders        Order[] 
   habits      Habit[] 
+  userPlan UserPlan?
 
   @@map("user")
 }
@@ -112,7 +113,7 @@ model Order {
   userId                String?  // make nullable
   user                  User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
 
-  stripeInvoiceId       String?
+  stripeInvoiceId       String?  @unique
   stripeSubscriptionId  String?
   stripeCustomerId      String?
   amount                Float
@@ -164,6 +165,8 @@ model Goal {
 
 model Media {
   id         String   @id @default(cuid())
+  key        String? @unique
+  isSystem   Boolean  @default(false)
   url        String
   fileName   String
   fileType   String
@@ -231,4 +234,67 @@ model AddOn {
 
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+}
+
+
+model Plan {
+  id           String   @id @default(cuid())
+  key          String   @unique // "free" | "standard" | "pro"
+  name         String
+  description  String?
+  isActive     Boolean  @default(true)
+
+  monthlyPrice Int      @default(0) // store cents or dollars consistently
+  yearlyPrice  Int      @default(0)
+
+  trialDays    Int      @default(0)
+  highlighted  Boolean  @default(false)
+
+  // Stripe price ids (optional but recommended)
+  stripeMonthlyPriceId String?
+  stripeYearlyPriceId  String?
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  features     PlanFeature[]
+  limits       PlanLimit?
+}
+
+model PlanFeature {
+  id        String @id @default(cuid())
+  planId    String
+  text      String
+  tooltip   String?
+  sortOrder Int    @default(0)
+
+  plan Plan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@index([planId])
+  @@unique([planId, sortOrder])
+}
+
+model PlanLimit {
+  id         String @id @default(cuid())
+  planId     String @unique
+
+  // null means unlimited
+  wishesLimit Int?
+  habitsLimit Int?
+
+  plan Plan @relation(fields: [planId], references: [id], onDelete: Cascade)
+}
+
+model UserPlan {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  planKey   String   // "free" | "standard" | "pro" (match Plan.key)
+
+  // optional snapshot for audit
+  startedAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([planKey])
 }

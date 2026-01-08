@@ -31,7 +31,7 @@ const ProfileViews = () => {
 
             <TabsTrigger value="email" className={triggerClass}>
               <Mail className="h-4 w-4" />
-              Email
+             Change Email
             </TabsTrigger>
 
             <TabsTrigger value="password" className={triggerClass}>

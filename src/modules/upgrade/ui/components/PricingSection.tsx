@@ -1,16 +1,18 @@
-"use client"
-import React from "react"
-import { cn } from "@/lib/utils"
-import { type FREQUENCY, FrequencyToggle } from "./FrequencyToggle"
-import { Plan, PricingCard } from "./pricing-card"
+"use client";
 
+import React, { useState } from "react";
+import { cn } from "@/lib/utils";
+import { type FREQUENCY, FrequencyToggle } from "./FrequencyToggle";
+import { PricingCard } from "./pricing-card";
+import { BillingPlanGetOne } from "../../types";
 
 interface PricingSectionProps extends React.ComponentProps<"div"> {
-  plans: Plan[]
-  heading: string
-  description?: string
-  activePlan?: string
-  activeSubscriptionId?: string | null
+  plans: BillingPlanGetOne[];
+  heading: string;
+  description?: string;
+  activePlan?: string; // should be "free" | "standard" | "pro"
+  activeSubscriptionId?: string | null;
+   loading?: boolean;
 }
 
 export function PricingSection({
@@ -21,7 +23,7 @@ export function PricingSection({
   activeSubscriptionId,
   ...props
 }: PricingSectionProps) {
-  const [frequency, setFrequency] = React.useState<FREQUENCY>("monthly")
+  const [frequency, setFrequency] = useState<FREQUENCY>("monthly");
 
   return (
     <div
@@ -43,19 +45,18 @@ export function PricingSection({
       </div>
 
       <FrequencyToggle frequency={frequency} setFrequency={setFrequency} />
-      
 
       <div className="mx-auto grid w-full max-w-5xl grid-cols-1 gap-6 md:grid-cols-3">
         {plans.map((plan) => (
           <PricingCard
             frequency={frequency}
-            key={plan.name}
+            key={plan.key} 
             plan={plan}
-            isActive={activePlan.toLowerCase() === plan.name.toLowerCase()}
+            isActive={activePlan.toLowerCase() === plan.key.toLowerCase()}
             activeSubscriptionId={activeSubscriptionId ?? null}
           />
         ))}
       </div>
     </div>
-  )
+  );
 }

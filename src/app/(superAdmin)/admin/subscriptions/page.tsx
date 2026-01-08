@@ -16,7 +16,7 @@ const page = async({ searchParams }: Props) => {
     void queryClient.prefetchQuery(trpc.adminSubscriptions.getMany.queryOptions({...filter}))
   return (
     <>
-    <article className="p-4 gap-y-2 flex-grow flex flex-col">
+    <article className="p-4 gap-y-2 grow flex flex-col">
       <SubscriptionFilters/>
      <HydrationBoundary state={dehydrate(queryClient)}>
         <Suspense fallback={<AdminSubscriptionsViewLoadingState />}>

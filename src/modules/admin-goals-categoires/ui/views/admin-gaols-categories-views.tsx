@@ -52,7 +52,7 @@ const AdminGoalsCategoriesViews = () => {
   const handleRemoveCategory = useCallback(
     async (categoryId: string) => {
       await confirmDelete(async () => {
-        await toast.promise(
+         toast.promise(
           deleteCategory.mutateAsync({ id: categoryId }),
           {
             loading: "Deleting category...",
@@ -79,7 +79,7 @@ const AdminGoalsCategoriesViews = () => {
 
   return (
     <>
-      <div className="flex flex-1 flex-grow flex-col gap-y-4 pb-4">
+      <div className="flex flex-1 grow flex-col gap-y-4 pb-4">
         <DataTable data={data.items} columns={columns} />
         <DataPagination
           page={filters.page}

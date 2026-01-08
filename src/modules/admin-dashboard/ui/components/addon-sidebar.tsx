@@ -17,6 +17,7 @@ const mainMenu = [
   { label: 'Subscriptions', href: '/admin/subscriptions', icon: CreditCard },
   { label: 'Orders', href: '/admin/orders', icon: ReceiptText },
   { label: 'Goals Categories', href: '/admin/goals-categories', icon: FolderTree },
+  { label: 'Manage Plans', href: '/admin/manage-plans', icon: FolderTree },
 ];
 
 
