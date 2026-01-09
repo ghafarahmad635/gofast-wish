@@ -26,7 +26,7 @@ export const adminGoalsCategories = createTRPCRouter({
           .number()
           .min(MIN_PAGE_SIZE)
           .max(MAX_PAGE_SIZE)
-          .default(DEFAULT_PAGE_SIZE),
+          .default(20),
         search: z.string().optional().default(""),
       }),
     )
