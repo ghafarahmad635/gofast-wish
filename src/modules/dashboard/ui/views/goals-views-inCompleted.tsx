@@ -25,7 +25,7 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel"
-import { Card } from "@/components/ui/card"
+
 
 const GoalsViewToComplete = () => {
   const trpc = useTRPC()
@@ -62,7 +62,9 @@ const GoalsViewToComplete = () => {
         await queryClient.invalidateQueries(trpc.goals.getManyByStatus.queryOptions({}))
         await queryClient.invalidateQueries(trpc.goals.getManyLatestForCarousel.queryOptions({}))
         await queryClient.invalidateQueries(trpc.goals.getAll.queryOptions())
-        router.push("/dashboard/goals/to-complete")
+        await queryClient.invalidateQueries(trpc.billing.getUsage.queryOptions())
+        
+        router.push("/dashboard/goals/")
       },
       onError: (error) => toast.error(error.message),
     })

@@ -41,6 +41,8 @@ const PlanEditForm = ({ plan, onSaved, onCancel }: Props) => {
       onSuccess: async () => {
         await queryClient.invalidateQueries(trpc.adminPlansRouter.list.queryOptions());
         await queryClient.invalidateQueries(trpc.billing.getPlans.queryOptions());
+        await queryClient.invalidateQueries(trpc.billing.getUsage.queryOptions());
+        
         toast.success("Plan updated successfully");
         onSaved();
       },

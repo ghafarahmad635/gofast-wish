@@ -39,6 +39,7 @@ export default function HabitsGrid({ habits }: Props) {
       onSuccess: async (data) => {
         await queryClient.invalidateQueries(trpc.habitsTracker.getMany.queryOptions({}))
         await queryClient.invalidateQueries(trpc.habitsTracker.getManyByFrequency.queryOptions({}))
+         await queryClient.invalidateQueries(trpc.billing.getUsage.queryOptions());
         if(habitDetails){
            await queryClient.invalidateQueries(trpc.habitsTracker.getCompletions.queryOptions({
             habitId:habitDetails.id

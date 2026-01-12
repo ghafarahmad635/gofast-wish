@@ -1,5 +1,5 @@
 import { db } from "@/lib/prisma";
-import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
+import { createTRPCRouter, premiumProcedure, protectedProcedure } from "@/trpc/init";
 import { TRPCError } from "@trpc/server";
 import { goalInsertSchema, goalUpdateSchema } from "../schmas";
 import z from "zod";
@@ -124,7 +124,7 @@ export const goalsRouter = createTRPCRouter({
     }
   }),
 
-  create: protectedProcedure
+  create: premiumProcedure("goals")
     .input(goalInsertSchema)
     .mutation(async ({ ctx, input }) => {
       try {

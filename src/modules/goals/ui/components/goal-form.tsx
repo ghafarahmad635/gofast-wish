@@ -74,6 +74,7 @@ const isCategoriesLoading = categories.isPending || categories.isFetching;
         await queryClient.invalidateQueries(trpc.goals.getManyByStatus.queryOptions({}));
         await queryClient.invalidateQueries(trpc.goals.getManyLatestForCarousel.queryOptions({}))
         await queryClient.invalidateQueries(trpc.goals.getAll.queryOptions())
+        await queryClient.invalidateQueries(trpc.billing.getUsage.queryOptions());
         toast.success("Goal created successfully!");
         onSuccess?.();
         form.reset();
@@ -90,6 +91,7 @@ const isCategoriesLoading = categories.isPending || categories.isFetching;
         await queryClient.invalidateQueries(trpc.goals.getManyByStatus.queryOptions({}));
         await queryClient.invalidateQueries(trpc.goals.getManyLatestForCarousel.queryOptions({}))
         await queryClient.invalidateQueries(trpc.goals.getAll.queryOptions())
+         await queryClient.invalidateQueries(trpc.billing.getUsage.queryOptions());
         onSuccess?.();
         form.reset();
       },

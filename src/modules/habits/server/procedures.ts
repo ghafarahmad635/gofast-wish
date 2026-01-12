@@ -1,5 +1,5 @@
 import { db } from "@/lib/prisma";
-import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
+import { createTRPCRouter, premiumProcedure, protectedProcedure } from "@/trpc/init";
 import { z } from "zod"; // ✅ use named import, not default
 import { habitCreateSchema } from "../schmas";
 import { TRPCError } from "@trpc/server";
@@ -176,7 +176,7 @@ getOne: protectedProcedure
 
 
  // ✅ Create new habit
-create: protectedProcedure
+create: premiumProcedure("habits")
   .input(habitCreateSchema)
   .mutation(async ({ ctx, input }) => {
     try {

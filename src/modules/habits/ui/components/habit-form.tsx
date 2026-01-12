@@ -80,7 +80,7 @@ const HabitForm = ({ onSuccess, onCancel, initialValues }: HabitFormProps) => {
           trpc.habitsTracker.getManyByFrequency.queryOptions({})
         );
         
-        
+         await queryClient.invalidateQueries(trpc.billing.getUsage.queryOptions());
         await queryClient.invalidateQueries(trpc.habitsTracker.getManyLatestByFrequency.queryOptions({}))
         
         form.reset();
@@ -109,7 +109,8 @@ const HabitForm = ({ onSuccess, onCancel, initialValues }: HabitFormProps) => {
          await queryClient.invalidateQueries(
           trpc.habitsTracker.getManyByFrequency.queryOptions({})
         );
-        await queryClient.invalidateQueries(trpc.habitsTracker.getManyLatestByFrequency.queryOptions({}))
+        await queryClient.invalidateQueries(trpc.habitsTracker.getManyLatestByFrequency.queryOptions({}));
+         await queryClient.invalidateQueries(trpc.billing.getUsage.queryOptions());
         if (initialValues?.id) {
           await queryClient.invalidateQueries(
             trpc.habitsTracker.getCompletions.queryOptions({

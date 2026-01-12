@@ -36,6 +36,68 @@ export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
     }
   })
 })
+
+
+
+export const premiumProcedure = (entity: "goals" | "habits") =>
+  protectedProcedure.use(async ({ ctx, next }) => {
+    const user = ctx.auth.user;
+
+    // 1) User plan (default "free")
+    const userPlan = await db.userPlan.findUnique({
+      where: { userId: user.id },
+      select: { planKey: true },
+    });
+
+    const planKey = (userPlan?.planKey ?? "free") as "free" | "standard" | "pro";
+
+    // 2) Load limits from PlanLimit: wishesLimit (goals) + habitsLimit
+    const plan = await db.plan.findUnique({
+      where: { key: planKey },
+      select: {
+        limits: {
+          select: {
+            wishesLimit: true, // goals limit
+            habitsLimit: true,
+          },
+        },
+      },
+    });
+
+    if (!plan?.limits) {
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Plan limits are not configured.",
+      });
+    }
+
+    const limit = entity === "goals" ? plan.limits.wishesLimit : plan.limits.habitsLimit;
+
+    // null means unlimited
+    if (limit !== null) {
+      const currentCount =
+        entity === "goals"
+          ? await db.goal.count({ where: { userId: user.id } })
+          : await db.habit.count({ where: { userId: user.id } });
+
+      if (currentCount >= limit) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: `You have reached your ${entity} limit for the ${planKey} plan.`,
+        });
+      }
+    }
+
+    return next({
+      ctx: {
+        ...ctx,
+        planKey, // optional
+        planLimits: plan.limits, // optional
+      },
+    });
+  });
+
+
 export const adminProtectedProcedure = t.procedure.use(async ({ ctx, next }) => {
   const session = await auth.api.getSession({
     headers: await headers(),

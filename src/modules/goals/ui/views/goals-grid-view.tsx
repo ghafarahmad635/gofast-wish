@@ -50,6 +50,7 @@ const GoalsGridViews = () => {
       onSuccess: async() => {
         // Invalidate and refetch goals list after deletion
         await queryClient.invalidateQueries();
+        await queryClient.invalidateQueries(trpc.billing.getUsage.queryOptions());
        
         router.push("/dashboard/goals");
       },

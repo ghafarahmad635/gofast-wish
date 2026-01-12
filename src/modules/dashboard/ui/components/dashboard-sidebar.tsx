@@ -8,6 +8,7 @@ import { PuzzleIcon, RepeatIcon, StarIcon, TargetIcon } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import DashboardUserButton from "./dashboard-user-button";
+import DashboardStats from "./dashbaord-stats";
 const firstSection = [
   {
     icon: TargetIcon,
@@ -119,6 +120,7 @@ const DashboardSidebar = () => {
         </SidebarGroup>
       </SidebarContent>
        <SidebarFooter className="">
+         <DashboardStats/>
          <DashboardUserButton />
        </SidebarFooter>
     </Sidebar>

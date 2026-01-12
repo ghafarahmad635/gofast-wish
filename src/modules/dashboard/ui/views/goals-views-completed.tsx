@@ -37,7 +37,11 @@ const GoalsViewCompleted = () => {
   const removeGoal = useMutation(
     trpc.goals.remove.mutationOptions({
       onSuccess: async () => {
-        await queryClient.invalidateQueries()
+        await queryClient.invalidateQueries(trpc.goals.getMany.queryOptions({}))
+        await queryClient.invalidateQueries(trpc.goals.getManyByStatus.queryOptions({}))
+        await queryClient.invalidateQueries(trpc.goals.getManyLatestForCarousel.queryOptions({}))
+        await queryClient.invalidateQueries(trpc.goals.getAll.queryOptions())
+        await queryClient.invalidateQueries(trpc.billing.getUsage.queryOptions())
        
       },
       onError: (error) => toast.error(error.message),
